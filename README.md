@@ -37,7 +37,7 @@ As you might know, there is no unique standard to request online tiles with some
   
 ### Pre-requisites  
 
-- #### PHP >= 8 (_see #1 for PHP7_) 
+- #### PHP >= 8 (_see [#1](https://github.com/nono303/kmlsuperoverlay/issues/1) for PHP7_) 
 
   - [tidy](https://www.php.net/manual/fr/book.tidy.php) extension for a better kml formating  (_optional_)  
   - [zip](https://www.php.net/manual/fr/book.zip.php) extension for kmz support (_optional_)
