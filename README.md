@@ -37,12 +37,10 @@ As you might know, there is no unique standard to request online tiles with some
   
 ### Pre-requisites  
 
-- #### PHP >= 8   
-  
-  - :question: PHP >= 7.x  to be checked - *I redefined 3 php8 `str_*` functions* **Let me know!**  
+- #### PHP >= 8 (_see #1 for PHP7_) 
+
   - [tidy](https://www.php.net/manual/fr/book.tidy.php) extension for a better kml formating  (_optional_)  
-  - [zip](https://www.php.net/manual/fr/book.zip.php) extension for kmz support (_optional_)  
-  
+  - [zip](https://www.php.net/manual/fr/book.zip.php) extension for kmz support (_optional_)
 - #### httpd 2.4  
   
   - Will works with 2.0 or 2.2 just changing `Require` term in configuration  
@@ -117,6 +115,10 @@ Debug output can be **html** or kml (_see above_). **kmz** is disabled, even if 
 You may have a look at [Google kml superoverlays reference page](https://developers.google.com/kml/documentation/kml_21tutorial#superoverlays) to interpret kml output  
 
 #### 7. Add mapsources  
+> :point_up: If you are a **mobac** and/or **geos** user, you can simply define `MAP_SOURCE_ROOTs` as same as their map sources directory
+> **KmlSuperOverlay** will only keep xml **customMapSource** - _excluding `xml` customMultiLayerMapSource and `bsh` BeanShell Script_
+> _see [#305 issue on mobac](https://sourceforge.net/p/mobac/feature-requests/305/) for extra elements_
+
 I provided **as an example** few mapsources for each format and feature in `./mapsources`  
 **Please have a look on map providers general conditions of use before** and see [Resources](#Resources) to enlarge your collection ;)  
 
@@ -125,7 +127,7 @@ I provided **as an example** few mapsources for each format and feature in `./ma
   - <serverParts> described on [mobac website](https://mobac.sourceforge.io/wiki/index.php/Custom_XML_Map_Sources#serverParts)  
   - <overlay> not documented as it's actually specific:  
     Just add <overlay>`true`</overlay> for tiles in PNG Alpha (transparency)   
-    it will change [Level Of Detail (lod)](https://developers.google.com/kml/documentation/regions#pixelrange) configuration to ensure that low zoomed tiles will not be visible and override the viewd ones  
+    it will change [Level Of Detail (lod)](https://developers.google.com/kml/documentation/regions#pixelrange) configuration to ensure that low zoomed tiles will not be visible and override the viewed ones
   
 #### 8. :warning: ​Beware!  
 
