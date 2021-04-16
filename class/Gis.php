@@ -1,5 +1,9 @@
 <?php
 	class Gis {
+		public static function revY($z,$y){
+			return (pow(2, $z)-1-$y);
+		}
+
 		public static function ZXYFromBbox($bbox,$z){
 			for ($x = $res["minx"] = Gis::lonToTileX($bbox["west"],$z) ; $x <= $res["maxx"] = Gis::lonToTileX($bbox["east"],$z); $x++)
 				for ($y = $res["miny"] = Gis::latToTileY($bbox["north"],$z) ; $y <= $res["maxy"] = Gis::latToTileY($bbox["south"],$z); $y++)

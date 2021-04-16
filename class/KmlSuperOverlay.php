@@ -278,7 +278,7 @@
 				$this->src["url"] = str_replace('{$serverpart}',($sp = explode(" ",$this->src["serverParts"]))[mt_rand(0, count($sp) - 1)],$this->src["url"]);
 			// TMS {$ry}
 			if(str_contains($this->src["url"],'{$ry}'))
-				return str_replace(['{$z}','{$x}','{$ry}'],[$z,$x,(pow(2, $z)-1-$y)],$this->src["url"]);
+				return str_replace(['{$z}','{$x}','{$ry}'],[$z,$x,Gis::revY($z,$y)],$this->src["url"]);
 			// QUAD {$q}
 			if(str_contains($this->src["url"],'{$q}'))
 				return str_replace('{$q}',Gis::tileToQuadKey($x,$y,$z),$this->src["url"]);
