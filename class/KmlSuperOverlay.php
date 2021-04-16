@@ -68,7 +68,7 @@
 		private static $displayRegion = true;
 		private static $debugHtml = false;
 		// ".kml" || ".kmz"
-		private static $outFormat = ".kmz";
+		private static $outFormat = ".kml";
 		/*
 			CONST
 		*/ const EPSG = 4326;
