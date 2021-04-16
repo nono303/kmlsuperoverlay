@@ -127,7 +127,7 @@ I provided **as an example** few mapsources for each format and feature in `./ma
     Just add <overlay>`true`</overlay> for tiles in PNG Alpha (transparency)   
     it will change [Level Of Detail (lod)](https://developers.google.com/kml/documentation/regions#pixelrange) configuration to ensure that low zoomed tiles will not be visible and override the viewd ones  
   
-#### 7. :warning: ​Beware!  
+#### 8. :warning: ​Beware!  
 
 - Be sure to encode your `customMapSource` xml files in **utf8**, otherwise they'll not appear in your list if it contains accented char `#frenchy`  
 - mapsources with a high <minZoom> value and without <region> specified *(by default the region is entire world)* might be:   
