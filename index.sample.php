@@ -1,6 +1,6 @@
 <?php
 	error_reporting(E_ERROR);
-	ini_set('memory_limit','1024M');
+	ini_set('memory_limit','256M');
 
 	include_once(__DIR__ ."/class/Gis.php");
 	include_once(__DIR__ ."/class/Common.php");
