@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customMapSource>
+	<name><![CDATA[BRGM - Géologie 1M]]></name>
+	<minZoom>6</minZoom>
+	<maxZoom>11</maxZoom>
+	<url><![CDATA[http://geoservices.brgm.fr/geologie?SERVICE=WMS&REQUEST=GetMap&LAYERS=SCAN_F_GEOL1M&SRS=EPSG:4326&VERSION=1.1.0&FORMAT=image/png&WIDTH=256&HEIGHT=256&BBOX={$bbox}]]></url>
+	<overlay>true</overlay>
+	<region>
+        <north>51</north>
+        <south>41</south>
+        <east>10.5</east>
+        <west>-5.5</west>
+   </region>
+</customMapSource>

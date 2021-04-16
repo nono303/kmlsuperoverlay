@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customMapSource>
+	<name><![CDATA[NZ - Topo]]></name>
+	<minZoom>13</minZoom>
+	<maxZoom>15</maxZoom>
+	<url><![CDATA[http://tiles-{$serverpart}.topomap.co.nz/tiles-topo50/{$z}-{$x}-{$ry}.png]]></url>
+	<serverParts>1 2 3 4</serverParts>
+	<region>
+        <north>-34</north>
+        <south>-47.3</south>
+        <east>179</east>
+        <west>166</west>
+   </region>
+</customMapSource>

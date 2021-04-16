@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customMapSource>
+	<name><![CDATA[Bing - Map]]></name>
+	<minZoom>0</minZoom>
+	<maxZoom>19</maxZoom>
+	<url><![CDATA[http://r{$serverpart}.ortho.tiles.virtualearth.net/tiles/r{$q}.png?g=45]]></url>
+	<serverParts>0 1 2 3</serverParts>
+</customMapSource>
