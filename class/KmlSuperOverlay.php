@@ -8,11 +8,13 @@
 		private $name;
 		private $baseurl;
 		private $isOverlay = false;
+		private $regionPolygon;
 		// debug
 		private $isDebug = false;
 		private $debugUrl = "";
 		private $startTime;
 		private $ruTime;
+
 		/*
 			STATIC
 		*/
@@ -69,9 +71,14 @@
 		private static $debugHtml = false;
 		// ".kml" || ".kmz"
 		private static $outFormat = ".kml";
+		// false || https://github.com/brick/geo#configuration
+		private static $brickEngine = "GEOSEngine";
+
 		/*
 			CONST
-		*/ const EPSG = 4326;
+		*/ 
+		const EPSG = 4326;
+
 		/*
 			CONSTRUCTOR
 		*/
@@ -92,6 +99,10 @@
 			$this->baseurl = $baseurl;
 			if($this->src["overlay"])
 				$this->isOverlay = true;
+			if(self::$brickEngine && is_array($this->src["region"])){
+				Brick\Geo\Engine\GeometryEngineRegistry::set(eval ('return new Brick\\Geo\\Engine\\'.self::$brickEngine.'();'));
+				$this->regionPolygon = Brick\Geo\Polygon::fromText("POLYGON ((".self::bboxToWkt($this->src["region"])."))");
+			}
 		}
 		/*
 			PUBLIC
@@ -142,7 +153,7 @@
 		}
 		public function createFromZXY($z,$x,$y) {
 			// Document Name
-			$this->name = $this->src["name"]."_".$z."-".$x."-".$y;
+			$this->name = $z."-".$x."-".$y;
 			$this->kml .= "<name>".$this->name."</name>";
 
 			// Region
@@ -151,9 +162,15 @@
 			$nz = $z + 1;
 			for($nx = ($x * 2); $nx <= ($x * 2) + 1; $nx++){
 				for($ny = ($y * 2); $ny <= ($y * 2) + 1; $ny++){
-					$groundOverlay .= $this->getGroundOverlay($nz,$nx,$ny);
-					if($nz < $this->src["maxZoom"])
-						$networkLink .= $this->getNetworkLink($nz,$nx,$ny);
+					$display = true;
+					$tilecoords = Gis::tileCoordZXY($nz,$nx,$ny,self::EPSG);
+					if(!is_null($this->regionPolygon))
+						$display = (Brick\Geo\Polygon::fromText("POLYGON ((".self::bboxToWkt($tilecoords)."))"))->intersects($this->regionPolygon);
+					if($display){
+						$groundOverlay .= $this->getGroundOverlay($nz,$nx,$ny,$tilecoords);
+						if($nz < $this->src["maxZoom"])
+							$networkLink .= $this->getNetworkLink($nz,$nx,$ny,$tilecoords);
+					}
 				}
 			}
 			$this->kml .= $groundOverlay;
@@ -166,7 +183,7 @@
 				if(self::$displayRegion){
 					$LineItems = [
 						self::createElement("tessellate",1),
-						self::createElement("coordinates",$bbox["west"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["north"].",0")
+						self::createElement("coordinates",self::bboxToLineString($bbox))
 					];
 					$placemarkItems = [
 						self::createElement("styleUrl","#linegreen"),
@@ -185,14 +202,13 @@
 			$this->name = $this->src["name"];
 			$this->kml .= "<name>".$this->name."</name>";
 
-
 			// Region
 			$this->kml .= self::createElement("Region", Common::assocArrayToXml($bbox));
 			$this->kml .= $pmlsbbox;
 
 			// NetworkLink
 			foreach(Gis::ZXYFromBbox($bbox,$zoom)["tiles"] as $nl)
-				$this->kml .= $this->getNetworkLink($nl["z"]-1,$nl["x"],$nl["y"]);
+				$this->kml .= $this->getNetworkLink($nl["z"]-1,$nl["x"],$nl["y"],Gis::tileCoordZXY($nl["z"]-1,$nl["x"],$nl["y"],self::EPSG));
 		}
 		public function createRoot($rootfolder,$name){
 			$this->name = $name;
@@ -234,7 +250,7 @@
 		/*
 			PRIVATE
 		*/
-		private function getGroundOverlay($z,$x,$y){
+		private function getGroundOverlay($z,$x,$y,$tilecoords){
 			$lod = self::$lod["groundOverlay"];
 			// if max zoom or opaque tiles : we keep it displayed
 			if($z == $this->src["maxZoom"] || !$this->isOverlay)
@@ -242,23 +258,23 @@
 			if($z == $this->src["minZoom"] || $z == self::$minZoom)
 				$lod["minLodPixels"] = -1;
 			$regionItems = [
-				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tehia = Gis::tileCoordZXY($z,$x,$y,self::EPSG), self::$altitude))),
+				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tilecoords, self::$altitude))),
 				self::createElement("Lod",Common::assocArrayToXml($lod))
 				];
 			$groundItems = [
 				self::createElement("Region", $regionItems),
 				self::createElement("drawOrder",$z),
 				self::createElement("Icon",self::createElement("href",$this->getUrl($z,$x,$y))),
-				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tehia, self::$altitude))),
+				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tilecoords, self::$altitude))),
 			];
 			return self::createElement("GroundOverlay", $groundItems,"go-".$z."-".$x."-".$y);
 		}
-		private function getNetworkLink($z,$x,$y){
+		private function getNetworkLink($z,$x,$y,$tilecoords){
 			$lod = self::$lod["networkLink"];
 			if($z == $this->src["minZoom"] || $z == self::$minZoom)
 				$lod["minLodPixels"] = -1;
 			$regionItems = [
-				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge(Gis::tileCoordZXY($z,$x,$y,self::EPSG), self::$altitude))),
+				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tilecoords, self::$altitude))),
 				self::createElement("Lod",Common::assocArrayToXml($lod)),
 			];
 			$linkItems = [
@@ -312,6 +328,12 @@
 		/*
 			PRIVATE STATIC
 		*/
+		private static function bboxToWkt($bbox){
+			return $bbox["west"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["north"];
+		}
+		private static function bboxToLineString($bbox){
+			return $bbox["west"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["north"].",0";
+		}
 		private static function createElement($itemName, $items, $namevalue = null){
 			if(!is_null($namevalue))
 				$ret .= "<name><![CDATA[".$namevalue."]]></name>";
