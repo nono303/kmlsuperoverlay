@@ -1,5 +1,6 @@
 <?php
 	class KmlSuperOverlay {
+
 		/*
 			PRIVATE
 		*/
@@ -32,21 +33,16 @@
 			"wrap" => false,
 			"clean" => true,
 		];
+		// !! <PolyStyle><fill>0</fill></PolyStyle> bug: don't follow longitude curve / <PolyStyle><color>00ffffff</color></PolyStyle> OK
 		private static $kmlformat = [
-			"header" => "<?xml version='1.0' encoding='utf-8'?>
-		<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gx='http://www.google.com/kml/ext/2.2'>
-		<Document>
-		<Style id='linered'>
-			<LineStyle>
-				<color>ff0000ff</color>
-			</LineStyle>
-		</Style>
-		<Style id='linegreen'>
-			<LineStyle>
-				<color>ff00ff00</color>
-			</LineStyle>
-		</Style>",
-			"footer" => "</Document></kml>"
+			"header" => 
+				"<?xml version='1.0' encoding='utf-8'?>
+				<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gx='http://www.google.com/kml/ext/2.2'>
+				<Document>
+				<Style id='linered'> <LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
+				<Style id='linegreen'><LineStyle><color>ff00ff00</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>",
+			"footer" => 
+				"</Document></kml>"
 		];
 		private static $lod = [
 			"groundOverlay" => [
@@ -181,13 +177,12 @@
 			if(is_array($this->src["region"])){
 				$bbox = $this->src["region"];
 				if(self::$displayRegion){
-					$LineItems = [
-						self::createElement("tessellate",1),
-						self::createElement("coordinates",self::bboxToLineString($bbox))
-					];
 					$placemarkItems = [
 						self::createElement("styleUrl","#linegreen"),
-						self::createElement("LineString",$LineItems)
+						self::createElement("Polygon",
+							self::createElement("outerBoundaryIs",
+								self::createElement("LinearRing",
+									self::createElement("coordinates",self::bboxToLinearRing($bbox)))))
 					];
 					$pmlsbbox =self::createElement("Placemark",$placemarkItems,"region");
 				}
@@ -225,7 +220,7 @@
 				// filter 
 				if($rootname == "customMapSource"){
 					// to be complient with https://github.com/grst/geos, just prefixed filesystem folders with '-' to be in first on my layer list & remove it here for display
-					$mapsource["folder"] = str_replace("-","",$filear[0]);
+					$mapsource["folder"] = preg_replace("/^-/","",$filear[0]);
 					if($xmlcontent["folder"])
 						// see https://geos.readthedocs.io/en/latest/users.html#more-maps
 						$mapsource["folder"] = $xmlcontent["folder"];
@@ -331,8 +326,8 @@
 		private static function bboxToWkt($bbox){
 			return $bbox["west"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["north"];
 		}
-		private static function bboxToLineString($bbox){
-			return $bbox["west"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["north"].",0";
+		private static function bboxToLinearRing($bbox){
+			return $bbox["west"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["north"].",10";
 		}
 		private static function createElement($itemName, $items, $namevalue = null){
 			if(!is_null($namevalue))
