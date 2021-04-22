@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- mobac-ignore: id folder overlay region id north south east west -->
 <customMapSource>
 	<name><![CDATA[NZ - Topo]]></name>
 	<minZoom>13</minZoom>
