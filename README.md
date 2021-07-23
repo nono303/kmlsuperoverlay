@@ -28,13 +28,11 @@ As you might know, there is no unique standard to request online tiles with some
   - EPSG 4326  
   - EPSG 3857 and some alias - *currently not exhaustively implemented*  
   - For other projections, I'm working on a transformation engine with [cs2cs](https://proj.org/apps/cs2cs.html) from [proj](https://proj.org) with good results on coordinates transformation but still have issues with re-projection...  
-  
 ### What are the benefits & features of this *wonderful* Gateway?  
 
 - Pure & simple PHP. No dependencies or composer modules.  
 - Fast or low memory footprint - *That's why I concatenate string rather than using simple_xml. Thanks not yelling at me ;)*  
 - Based on [Mobile Atlas Creator (mobac)](https://mobac.sourceforge.io/) and [GEOS](https://github.com/grst/geos) mapsource xml files.  
-  
 ### Pre-requisites  
 
 - #### PHP >= 8 (_see [#1](https://github.com/nono303/kmlsuperoverlay/issues/1) for PHP7_) 
@@ -44,7 +42,6 @@ As you might know, there is no unique standard to request online tiles with some
 - #### httpd 2.4  
   
   - Will works with 2.0 or 2.2 just changing `Require` term in configuration  
-  
 ### So, how does it work? in fact, quite simply!  
 
 > `/kmlsuperoverlay` will be the **"how-to" end-point** example  
@@ -85,7 +82,7 @@ define("URL_BASE","/kmlsuperoverlay/");
 
 ![](./.readme/ge1.png)  
 
-:boom:**it works!** :boom:  
+:boom:**it works!**:boom:  
 
 #### 5. Tuning : `/class/KmlSuperOverlay.php`  
 
@@ -105,7 +102,6 @@ All the "fine" tuning might be done with the static vars of `KmlSuperOverlay` Cl
 - `debugHtml`: if set to true, display **kml** output in **html** for browser rendering only  
 - `outFormat`: `.kml` or `.kmz`. Default is `.kml`
   - **kmz** need **zip** extension to be enabled and offer less bandwidth but more cpu usage  
-  
 #### 6. Debug  
 
 Just end url with **`/debug`**, it's will set debug mode for all kml networklink.  
@@ -128,7 +124,6 @@ I provided **as an example** few mapsources for each format and feature in `./ma
   - <overlay> not documented as it's actually specific:  
     Just add <overlay>`true`</overlay> for tiles in PNG Alpha (transparency)   
     it will change [Level Of Detail (lod)](https://developers.google.com/kml/documentation/regions#pixelrange) configuration to ensure that low zoomed tiles will not be visible and override the viewed ones
-  
 #### 8. :warning: ​Beware!  
 
 - Be sure to encode your `customMapSource` xml files in **utf8**, otherwise they'll not appear in your list if it contains accented char `#frenchy`  
@@ -138,13 +133,11 @@ I provided **as an example** few mapsources for each format and feature in `./ma
   - Hard and memory consuming to render for **Google Earth** , according to your memory and GPU configuration.  
   - High bandwidth consuming with the server   
     - Note that some map providers apply a limitation on bandwidth and/or tiles per day and might ban your IP if they are considering your use out of their general conditions.  
-  
 ### Credits  
 
 - **[@grst](https://github.com/grst)** for [geos](https://geos.readthedocs.io) - My main inspiration for this project.  
 - **[@r_x](https://sourceforge.net/u/r_x/profile/)** for [mobac](https://sourceforge.net/p/mobac/) - A "must-have" tool for all _GeekHiker_ like me ;)  
 - **@Nicolas.Paour** for [randochartreuse](http://randochartreuse.free.fr/) - The *"good maths"* for coordinates transformation.  
-  
 ### Resources  
 
 - **Other "SuperOverlay" tools**  
