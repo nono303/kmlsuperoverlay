@@ -17,7 +17,8 @@
 		public static function getXmlFileAsAssocArray($xmlfile, &$rootname = null){
 			if(!is_file($xmlfile))
 				throw new Exception("xmlfile is null");
-			$xml = simplexml_load_file($xmlfile,'SimpleXMLElement', LIBXML_NOCDATA);
+			// https://stackoverflow.com/q/6167279
+			$xml = Common::xml_load_file($xmlfile,'SimpleXMLElement', LIBXML_NOCDATA);
 			$rootname = $xml->getName();
 			return json_decode(json_encode($xml), TRUE);
 		}
@@ -28,6 +29,14 @@
 			foreach($array as $k => $v)
 				$ret .= "<".$k.">".$v."</".$k.">";
 			return $ret;
+		}
+
+		// throws exeption if xml parsing failed
+		public static function xml_load_file (string $filename, ?string $class_name = SimpleXMLElement::class, int $options = 0, string $namespace_or_prefix = "", bool $is_prefix = false) {
+			$sxe = simplexml_load_file($filename,$class_name,$options,$namespace_or_prefix,$is_prefix);
+			if ($sxe === false) 
+				throw new Exception("'".$filename."' can't be parsed as XML: ".str_replace("Array","",print_r(libxml_get_errors(),true)));
+			return $sxe;
 		}
 
 		public static function scandirRecursiveFilePattern($path,$pattern) {
