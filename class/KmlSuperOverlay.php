@@ -39,7 +39,7 @@
 				"<?xml version='1.0' encoding='utf-8'?>
 				<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gx='http://www.google.com/kml/ext/2.2'>
 				<Document>
-				<Style id='linered'> <LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
+				<Style id='linered'><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
 				<Style id='linegreen'><LineStyle><color>ff00ff00</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>",
 			"footer" => 
 				"</Document></kml>"
@@ -198,7 +198,7 @@
 			$this->kml .= "<name>".$this->name."</name>";
 
 			// Region
-			$this->kml .= self::createElement("Region", Common::assocArrayToXml($bbox));
+			$this->kml .= self::createElement("Region", [self::createElement("LatLonAltBox",Common::assocArrayToXml($bbox))]);
 			$this->kml .= $pmlsbbox;
 
 			// NetworkLink
