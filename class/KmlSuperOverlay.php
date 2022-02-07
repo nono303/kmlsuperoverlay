@@ -120,7 +120,7 @@
 				$description.
 				$this->kml.
 				self::$kmlformat["footer"];
-			if(extension_loaded("tidy"))
+			if(TIDY_KML && extension_loaded("tidy"))
 				$this->kml = tidy_repair_string($this->kml, self::$tidyOptions);
 			if(!$this->debug){
 				ob_clean();
