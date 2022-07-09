@@ -40,7 +40,11 @@
 				<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gx='http://www.google.com/kml/ext/2.2'>
 				<Document>
 				<Style id='linered'><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
-				<Style id='linegreen'><LineStyle><color>ff00ff00</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>",
+				<Style id='linegreen'><LineStyle><color>ff00ff00</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
+				<Style id='folderCheckOffOnly'><ListStyle><listItemType>checkOffOnly</listItemType><bgColor>bbfcf7de</bgColor>
+					<ItemIcon><state>open</state><href>http://maps.google.com/mapfiles/kml/shapes/donut.png</href></ItemIcon>
+					<ItemIcon><state>closed</state><href>http://maps.google.com/mapfiles/kml/shapes/forbidden.png</href></ItemIcon>
+				</ListStyle></Style>",
 			"footer" => 
 				"</Document></kml>"
 		];
@@ -120,8 +124,15 @@
 				$description.
 				$this->kml.
 				self::$kmlformat["footer"];
-			if(TIDY_KML && extension_loaded("tidy"))
+			if(TIDY_KML && extension_loaded("tidy")){
 				$this->kml = tidy_repair_string($this->kml, self::$tidyOptions);
+			} elseif (INDENT_KML){
+				$doc = new DOMDocument();
+				$doc->preserveWhiteSpace = false;
+				$doc->formatOutput = true;
+				$doc->loadXML($this->kml);
+				$this->kml = $doc->saveXML();
+			}
 			if(!$this->debug){
 				ob_clean();
 				header("Content-Disposition: inline; filename=".$this->name.self::$outFormat);
@@ -209,7 +220,7 @@
 			$this->name = $name;
 			$this->kml .= "<name>".$this->name."</name>";
 
-			$nf = "<Folder>";
+			$nf = "<Folder><styleUrl>#folderCheckOffOnly</styleUrl>";
 			$curfolder = null;
 
 			// scandirRecursiveFilePattern ensure compatibility for unix & windows filesystems with only "/" as DIRECTORY_SEPARATOR
@@ -227,7 +238,7 @@
 					// Construct KML
 					if($mapsource["folder"] != $curfolder){
 						$this->kml .= $nf."<name>".($curfolder = $mapsource["folder"])."</name>";
-						$nf = "</Folder><Folder>";
+						$nf = "</Folder><Folder><styleUrl>#folderCheckOffOnly</styleUrl>";
 					}
 					$linkItems = [
 						self::createElement("href",$this->baseurl.$uri.$this->debugUrl),

@@ -12,6 +12,8 @@
 	define("URL_BASE","/kmlsuperoverlays/");
 	// enable (slow & higher memory usage) or disable kml clean & format with tidy extension
 	define("TIDY_KML",false);
+	// enable kml indent if TIDY_KML == false
+	define("INDENT_KML",true);
 
 	KmlSuperOverlay::controller(array_filter(explode("/",explode(URL_BASE,$_REQUEST['qs'])[1])),URL_BASE);
 ?>
