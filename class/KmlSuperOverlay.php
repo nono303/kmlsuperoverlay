@@ -10,6 +10,7 @@
 		private $baseurl;
 		private $isOverlay = false;
 		private $regionPolygon;
+		private $brickEngine;
 		// debug
 		private $isDebug = false;
 		private $debugUrl = "";
@@ -71,8 +72,6 @@
 		private static $debugHtml = false;
 		// ".kml" || ".kmz"
 		private static $outFormat = ".kml";
-		// false || https://github.com/brick/geo#configuration
-		private static $brickEngine = "GEOSEngine";
 
 		/*
 			CONST
@@ -99,8 +98,8 @@
 			$this->baseurl = $baseurl;
 			if($this->src["overlay"])
 				$this->isOverlay = true;
-			if(self::$brickEngine && is_array($this->src["region"])){
-				Brick\Geo\Engine\GeometryEngineRegistry::set(eval ('return new Brick\\Geo\\Engine\\'.self::$brickEngine.'();'));
+			if(extension_loaded("geos") && is_array($this->src["region"])){
+				$this->brickEngine = new Brick\Geo\Engine\GEOSEngine();
 				$this->regionPolygon = Brick\Geo\Polygon::fromText("POLYGON ((".self::bboxToWkt($this->src["region"])."))");
 			}
 		}
@@ -172,7 +171,7 @@
 					$display = true;
 					$tilecoords = Gis::tileCoordZXY($nz,$nx,$ny,self::EPSG);
 					if(!is_null($this->regionPolygon))
-						$display = (Brick\Geo\Polygon::fromText("POLYGON ((".self::bboxToWkt($tilecoords)."))"))->intersects($this->regionPolygon);
+						$display = $this->brickEngine->intersects(Brick\Geo\Polygon::fromText("POLYGON ((".self::bboxToWkt($tilecoords)."))"),$this->regionPolygon);
 					if($display){
 						$groundOverlay .= $this->getGroundOverlay($nz,$nx,$ny,$tilecoords);
 						if($nz < $this->src["maxZoom"])
