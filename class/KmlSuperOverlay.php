@@ -12,7 +12,7 @@
 		private $regionPolygon;
 		private $brickEngine;
 		// debug
-		private $isDebug = false;
+		private $debug = false;
 		private $debugUrl = "";
 		private $startTime;
 		private $ruTime;
@@ -67,7 +67,13 @@
 			"minAltitude" => 0, 
 			"maxAltitude" => 0
 		];
-		private static $minZoom = 3;
+		/* 
+			for google earth compatibility
+			* 2022-12-13
+				< 7.3.6.9285: 3
+				>= 7.3.6.9285: 5
+		*/
+		private static $minZoom = 5;
 		private static $displayRegion = true;
 		private static $debugHtml = false;
 		// ".kml" || ".kmz"
