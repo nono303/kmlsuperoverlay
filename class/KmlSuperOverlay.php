@@ -16,6 +16,7 @@
 		private $debugUrl = "";
 		private $startTime;
 		private $ruTime;
+		private $nbnl;
 
 		/*
 			STATIC
@@ -75,7 +76,7 @@
 		*/
 		private static $minZoom = 5;
 		private static $displayRegion = true;
-		private static $debugHtml = false;
+		private static $debugHtml = true;
 		// ".kml" || ".kmz"
 		private static $outFormat = ".kml";
 
@@ -95,9 +96,10 @@
 			$this->kml = "";
 			$this->src = $src;
 			$this->debug = $debug;
-			if($this->debug){
+			$this->nbnl=0;
 				$this->startTime = microtime(true);
 				$this->ruTime = getrusage();
+			if($this->debug){
 				$this->debugUrl = "/debug";
 				self::$outFormat = ".kml";
 			}
@@ -113,17 +115,6 @@
 			PUBLIC
 		*/
 		public function display(){
-			$description = "";
-			if($this->debug){
-				$ru = getrusage();
-				$desc = 
-					date("Y-m-d H:i:s").PHP_EOL.
-					"ttim: ".round((microtime(true)-$this->startTime)*1000).PHP_EOL.
-					"utim: ".Common::rutime($ru, $this->ruTime, "utime").PHP_EOL.
-					"stim: ".Common::rutime($ru, $this->ruTime, "stime").PHP_EOL.
-					"pmem: ".Common::afficheOctets(memory_get_peak_usage());
-				$description = self::createElement("description",nl2br($desc));
-			}
 			$this->kml = 
 				self::$kmlformat["header"].
 				$description.
@@ -141,6 +132,8 @@
 			if(!$this->debug){
 				ob_clean();
 				header("Content-Disposition: inline; filename=".$this->name.self::$outFormat);
+				foreach($this->debugHeaders() as $debugHeader)
+					header("X-Debug-".$debugHeader);
 				if(self::$outFormat == ".kml"){
 					header('Content-Type: application/vnd.google-earth.kml+xml kml');
 					echo $this->kml;
@@ -154,13 +147,14 @@
 					unlink($kmzfile);
 				}
 			} else {
+				foreach($this->debugHeaders() as $debugHeader)
+					echo $debugHeader."<br>".PHP_EOL;
 				if(self::$debugHtml){
 					echo Common::htmlAsHtml($this->kml);
 				} else {
 					echo $this->kml;
 				}
 			}
-			
 			exit();
 		}
 		public function createFromZXY($z,$x,$y) {
@@ -261,6 +255,17 @@
 		/*
 			PRIVATE
 		*/
+		private function debugHeaders(){
+			$ru = getrusage();
+			return [
+				"time: ".round((microtime(true)-$this->startTime)*1000),
+				"time_usr: ".Common::rutime($ru, $this->ruTime, "utime"),
+				"time_sys: ".Common::rutime($ru, $this->ruTime, "stime"),
+				"mem_peak: ".Common::afficheOctets(memory_get_peak_usage()),
+				"nbnl: ".$this->nbnl
+			];
+		}
+
 		private function getGroundOverlay($z,$x,$y,$tilecoords){
 			$lod = self::$lod["groundOverlay"];
 			// if max zoom or opaque tiles : we keep it displayed
@@ -297,6 +302,7 @@
 				self::createElement("Link",$linkItems),
 				self::createElement("Region", $regionItems)
 			];
+			$this->nbnl++;
 			return self::createElement("NetworkLink", $networkItems,"nl-".$z."-".$x."-".$y);
 		}
 		private function getUrl($z,$x,$y){
