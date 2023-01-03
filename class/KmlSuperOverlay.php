@@ -399,7 +399,7 @@
 				$so->createRoot(MAP_SOURCE_ROOT,end(array_filter(explode("/",$urlbase))));
 				$so->display();
 			} else{
-				if(preg_match("/\.(km.)$/",end($params),$matches))
+				if(preg_match("/(\.km.)$/",end($params),$matches))
 					$zxy = explode("-",str_replace($matches[1],"",array_pop($params)));
 				$path = implode("/",$params);
 				if(is_file($file = MAP_SOURCE_ROOT.$path.".xml")){
