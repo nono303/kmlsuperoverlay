@@ -4,11 +4,12 @@
 		/*
 			PRIVATE
 		*/
+
 		private $kml;
 		private $src;
 		private $name;
 		private $baseurl;
-		private $isOverlay = false;
+		private $groundOverlayLod;
 		private $regionPolygons;
 		private $brickEngine;
 		private $isCrossingAntimeridian = false;
@@ -22,6 +23,7 @@
 		/*
 			STATIC
 		*/
+
 		private static $worldBbox = [
 			"north" => 85,	/* maxLat */
 			"south" => -85,	/* minLat */
@@ -55,30 +57,58 @@
 				"</Document></kml>"
 		];
 		private static $lod = [
-			"groundOverlay" => [
 				/* 
-					display tile when minLodPixels is reached on the current view. 
+				--- Level of Detail ---
+				
+				https://developers.google.com/kml/documentation/regions#fade-extent
+				https://www.google.com/intl/fr-CA_ALL/earth/outreach/learn/avoiding-overload-with-regions/
+
+				minLodPixels: display tile when value is reached on the current view. 
+				- groundOverlay
 					* 256 correspond to tile size = 1:1
 					* 128 (1:2) might result in too little (unreadable) tiles
-				*/
-				"minLodPixels" => 256,
-				/*
-					undisplay tile when maxLodPixels is reached on the current view. 
+				- networkLink:
+					* 192 for loading link before groundOverlay can be displayed
+					* 256 might result in latency to display groundOverlay
+					* 64  might result unnecessary load on networkLink server and tiles concurrent request
+				
+				maxLodPixels: undisplay tile when value is reached on the current view. 
+				- groundOverlay
 					* 512 correspond to double tile size = 2:1
 					* -1  to disable undisplay (high memory load for GoogleEarth)
+				
+				xxxFadeExtent: INSIDE minLodPixels <> maxLodPixels windows
+					0%:		< minLodPixels
+					100%:	> minLodPixels + minFadeExtent 
+								&& 
+							< maxLodPixels - maxFadeExtent
+					0%:		> maxLodPixels - maxFadeExtent
+
+				groundOverlay Level of Detail values might be different for opaque (readable) and transparent (precise) tiles
+				- notile is for the default notile png when server doesn't have tile for low zoom resolution
 				*/
+			"groundOverlay" => [
+				"transparent" => [
+					"minLodPixels" => 192,
+					"maxLodPixels" => 640, 
+					"minFadeExtent" => -1, 
+					"maxFadeExtent" => -1
+				],
+				"opaque" => [
+					"minLodPixels" => 256,
+					"maxLodPixels" => 1024, 
+					"minFadeExtent" => -1, 
+					"maxFadeExtent" => 256
+				],
+				"notile" => [
+					"minLodPixels" => 256,
 				"maxLodPixels" => 512, 
 				"minFadeExtent" => -1, 
 				"maxFadeExtent" => -1
+				]
 			],
 			"networkLink" => [
-				/*
-					load the 'zoom in' networkLink minLodPixels is reached on the current view. 
-					* 192 for loading link before groundOverlay can be displayed
-					* 256 might result in latency to display groundOverlay
-					* 64  might result unnecessary load on server
-				*/
-				"minLodPixels" => 192, 
+				"minLodPixels" => 176, 
 				"maxLodPixels" => -1, 
 				"minFadeExtent" => -1, 
 				"maxFadeExtent" => -1
@@ -100,14 +130,14 @@
 		// ".kml" || ".kmz"
 		private static $outFormat = ".kml";
 
-		/*
-			CONST
-		*/ 
-		const EPSG = 4326;
+		// name for the default "notile" png (preferably transparent with alpha). must be in this script script
+		private static $notilePngPath = "zoom.png";
+		private static $espg = 4326;
 
 		/*
 			CONSTRUCTOR
 		*/
+
 		function __construct($debug, $baseurl,$src = null) {
 			if(!in_array(self::$outFormat,[".kml",".kmz"]))
 				throw new Exception("unknow outFormat '".self::$outFormat."'");
@@ -124,8 +154,7 @@
 				self::$outFormat = ".kml";
 			}
 			$this->baseurl = $baseurl;
-			if($this->src["overlay"])
-				$this->isOverlay = true;
+			$this->src["overlay"] ? $this->groundOverlayLod = "transparent" : $this->groundOverlayLod = "opaque";
 			if(is_array($this->src["region"])){
 				$this->src["region_display"] = $this->src["region"];
 				// region is crossing antimeridian
@@ -136,15 +165,17 @@
 				}
 				if(extension_loaded("geos")){
 				$this->brickEngine = new Brick\Geo\Engine\GEOSEngine();
-					$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::EPSG);
+					$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::$espg);
 					if($this->isCrossingAntimeridian)
-						$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region_display"])."))",self::EPSG);
+						$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region_display"])."))",self::$espg);
 				}
 			}
 		}
+
 		/*
 			PUBLIC
 		*/
+
 		public function display(){
 			$this->kml = 
 				self::$kmlformat["header"].
@@ -188,22 +219,23 @@
 			}
 			exit();
 		}
+
 		public function createFromZXY($z,$x,$y) {
 			// Document Name
 			$this->name = $z."-".$x."-".$y;
 			$this->kml .= "<name>".$this->name."</name>";
 
 			// Region
-			$this->kml .= self::createElement("Region", [self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge(Gis::tileCoordZXY($z,$x,$y,self::EPSG), self::$altitude)))]);
+			$this->kml .= self::createElement("Region", [self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge(Gis::tileCoordZXY($z,$x,$y,self::$espg), self::$altitude)))]);
 
 			$nz = $z + 1;
 			for($nx = ($x * 2); $nx <= ($x * 2) + 1; $nx++){
 				for($ny = ($y * 2); $ny <= ($y * 2) + 1; $ny++){
-					$tilecoords = Gis::tileCoordZXY($nz,$nx,$ny,self::EPSG);
+					$tilecoords = Gis::tileCoordZXY($nz,$nx,$ny,self::$espg);
 					if(!is_null($this->regionPolygons)){
 						$display = false;
 						foreach($this->regionPolygons as $regionPolygon)
-							$display = $display || $this->brickEngine->intersects($current = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($tilecoords)."))",self::EPSG),$regionPolygon);
+							$display = $display || $this->brickEngine->intersects($current = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($tilecoords)."))",self::$espg),$regionPolygon);
 					} else {
 						$display = true;
 					}
@@ -218,6 +250,7 @@
 			if($nz < $this->src["maxZoom"])
 				$this->kml .= $networkLink;
 		}
+
 		public function createFromBbox() {
 			if(is_array($this->src["region_display"])){
 				$bbox = $this->src["region_display"];
@@ -236,9 +269,6 @@
 			} else {
 				$bbox = self::$worldBbox;
 			}
-			$zoom = $this->src["minZoom"]-1;
-			if($this->src["minZoom"] < self::$minZoom)
-				$zoom = self::$minZoom-1;
 
 			// Document Name
 			$this->name = $this->src["name"];
@@ -249,9 +279,10 @@
 			$this->kml .= $pmlsbbox;
 
 			// NetworkLink
-			foreach(Gis::ZXYFromBbox($bbox,$zoom)["tiles"] as $nl)
-				$this->kml .= $this->getNetworkLink($nl["z"]-1,$nl["x"],$nl["y"],Gis::tileCoordZXY($nl["z"]-1,$nl["x"],$nl["y"],self::EPSG));
+			foreach(Gis::ZXYFromBbox($bbox,self::$minZoom-1)["tiles"] as $nl)
+				$this->kml .= $this->getNetworkLink($nl["z"]-1,$nl["x"],$nl["y"],Gis::tileCoordZXY($nl["z"]-1,$nl["x"],$nl["y"],self::$espg));
 		}
+
 		public function createRoot($rootfolder,$name){
 			$this->name = $name;
 			$this->kml .= "<name>".$this->name."</name>";
@@ -289,9 +320,11 @@
 			}
 			$this->kml .= "</Folder>";
 		}
+
 		/*
 			PRIVATE
 		*/
+
 		private function debugHeaders(){
 			$ru = getrusage();
 			return [
@@ -304,12 +337,17 @@
 		}
 
 		private function getGroundOverlay($z,$x,$y,$tilecoords){
-			$lod = self::$lod["groundOverlay"];
-			// if max zoom or opaque tiles : we keep it displayed
-			if($z == $this->src["maxZoom"] || !$this->isOverlay)
+			$lod = self::$lod["groundOverlay"][$this->groundOverlayLod];
+			// maxZoom: we keep tile displayed even if zoom more
+			if($z == $this->src["maxZoom"]){
 				$lod["maxLodPixels"] = -1;
-			if($z == $this->src["minZoom"] || $z == self::$minZoom)
+			// minZoom: we keep tile displayed even if unzoom more (self::$minZoom for notile / $this->src["minZoom"] for served tile)
+			} elseif($z == self::$minZoom || $z == $this->src["minZoom"]){
 				$lod["minLodPixels"] = -1;
+			// default notile png when server doesn't have tile for low zoom resolution
+			} elseif ($z < $this->src["minZoom"]){
+				$lod = self::$lod["groundOverlay"]["notile"];
+			}
 			$regionItems = [
 				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tilecoords, self::$altitude))),
 				self::createElement("Lod",Common::assocArrayToXml($lod))
@@ -324,13 +362,11 @@
 			];
 			return self::createElement("GroundOverlay", $groundItems,"go-".$z."-".$x."-".$y);
 		}
+
 		private function getNetworkLink($z,$x,$y,$tilecoords){
-			$lod = self::$lod["networkLink"];
-			if($z == $this->src["minZoom"] || $z == self::$minZoom)
-				$lod["minLodPixels"] = -1;
 			$regionItems = [
 				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tilecoords, self::$altitude))),
-				self::createElement("Lod",Common::assocArrayToXml($lod)),
+				self::createElement("Lod",Common::assocArrayToXml(self::$lod["networkLink"])),
 			];
 			$linkItems = [
 				self::createElement("href",$this->baseurl.$z."-".$x."-".$y.self::$outFormat.$this->debugUrl),
@@ -344,7 +380,10 @@
 			$this->nbnl++;
 			return self::createElement("NetworkLink", $networkItems,"nl-".$z."-".$x."-".$y);
 		}
+
 		private function getUrl($z,$x,$y){
+			if($z < $this->src["minZoom"])
+				return $_SERVER['REQUEST_SCHEME']."://".$_SERVER['HTTP_HOST'].URL_BASE.self::$notilePngPath;
 			// serverParts {$serverpart}
 			if($this->src["serverParts"])
 				$this->src["url"] = str_replace('{$serverpart}',($sp = explode(" ",$this->src["serverParts"]))[mt_rand(0, count($sp) - 1)],$this->src["url"]);
@@ -372,8 +411,8 @@
 						throw new Exception("unsupported Projection EPSG:".$curepsg." in '".$this->src["url"]."'");
 						/* 
 							Not activated cause require cs2cs and lot of libs, deps...
-						$bboxt = explode(",",$curbbox = Gis::tileEdges($x, $y, $z, self::EPSG));
-						$bbox = Gis::transformEpsg(self::EPSG, $curepsg,$bboxin = [[$bboxt[0],$bboxt[1]],[$bboxt[2],$bboxt[3]]]);
+							$bboxt = explode(",",$curbbox = Gis::tileEdges($x, $y, $z, self::$espg));
+							$bbox = Gis::transformEpsg(self::$espg, $curepsg,$bboxin = [[$bboxt[0],$bboxt[1]],[$bboxt[2],$bboxt[3]]]);
 						*/
 					}
 				} else {
@@ -381,15 +420,19 @@
 				}
 			}
 		}
+
 		/*
 			PRIVATE STATIC
 		*/
+
 		private static function bboxToWkt($bbox){
 			return $bbox["west"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["north"];
 		}
+
 		private static function bboxToLinearRing($bbox){
 			return $bbox["west"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["north"].",10";
 		}
+
 		private static function createElement($itemName, $items, $namevalue = null){
 			if(!is_null($namevalue))
 				$ret .= "<name><![CDATA[".$namevalue."]]></name>";
@@ -407,9 +450,11 @@
 				return "<".$itemName."><![CDATA[".$ret."]]></".$itemName.">";
 			return "<".$itemName.">".$ret."</".$itemName.">";
 		}
+
 		/*
 			STATIC CONTROLLER
 		*/
+
 		public static function controller($params,$urlbase){
 			$debug = false;
 			if(sizeof($params) > 0 && strcasecmp(end($params),"debug") == 0){
@@ -435,12 +480,16 @@
 						$so->createFromBbox();
 					}
 					$so->display();
+				} elseif($path == self::$notilePngPath) {
+					ob_flush();
+					header('Content-Type: image/png');
+					readfile(dirname(__FILE__).DIRECTORY_SEPARATOR.self::$notilePngPath);
 				} else {
 					header("HTTP/1.0 404 Not Found");
 					echo "Layer '".$path."' doesn't exist";
+				}
 					exit();
 				}
 			}
 		}
-	}
 ?>
