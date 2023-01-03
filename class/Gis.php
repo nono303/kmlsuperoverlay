@@ -20,7 +20,7 @@
 			$bbox["west"] > $bbox["east"] ? $addeast = $modulo : $addeast = 0;
 			for ($x = Gis::lonToTileX($bbox["west"],$z) ; $x <= Gis::lonToTileX($bbox["east"],$z)+$addeast; $x++)
 				for ($y = Gis::latToTileY($bbox["north"],$z) ; $y <= Gis::latToTileY($bbox["south"],$z); $y++)
-					$res["tiles"][] = ["z" =>($z+1),"x" => ($x % $modulo),"y" => $y];
+					$res["tiles"][] = ["z" =>($z+1),"x" => (($x+$modulo) % $modulo),"y" => $y];
 			return $res;
 		}
 
@@ -39,7 +39,6 @@
 			return floor((1 - log(tan(deg2rad($lat)) + 1 / cos(deg2rad($lat))) / M_PI) / 2 * pow(2, $zoom));
 		}
 
-		// D:\http\host\maps.nono303.net\gw\zxy\exec.php
 		// Mercator - http://randochartreuse.free.fr/mobac2.x/documentation/#bsh
 		public static function tileEdges($x,$y,$z,$epsg=4326){
 			if($epsg == 4326)
@@ -106,7 +105,6 @@
 		}
 
 		// http://randochartreuse.free.fr/mobac2.x/documentation/#bsh
-		// D:\http\host\maps.nono303.net\gw\zxy\exec.php
 		public static function tileToQuadKey($x, $y, $zoom){ 
 			$res="";
 			$prx = $osy = $osx = pow(2,$zoom-1);
