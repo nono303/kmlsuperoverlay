@@ -10,7 +10,9 @@
 > *See [credits](#credits) below for further informations.*  
 
 ![](./.readme/ge2.png)  
-*exemple of french IGN topo "SCAN25" on the Écrins*  
+*French IGN topo over **Écrins***  
+![](./.readme/ge3.png)  
+*Swiss hiking paths & Strava run heatmap over **Arolla***
 
 ### What kind of mapsources can I request?  
 
