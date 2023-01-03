@@ -9,8 +9,9 @@
 		private $name;
 		private $baseurl;
 		private $isOverlay = false;
-		private $regionPolygon;
+		private $regionPolygons;
 		private $brickEngine;
+		private $isCrossingAntimeridian = false;
 		// debug
 		private $debug = false;
 		private $debugUrl = "";
@@ -106,9 +107,20 @@
 			$this->baseurl = $baseurl;
 			if($this->src["overlay"])
 				$this->isOverlay = true;
-			if(extension_loaded("geos") && is_array($this->src["region"])){
+			if(is_array($this->src["region"])){
+				$this->src["region_display"] = $this->src["region"];
+				// region is crossing antimeridian
+				if($this->src["region_display"]["west"] > $this->src["region_display"]["east"]){
+					// "fake" displayed region for <LinearRing> and <LatLonAltBox>
+					$this->src["region_display"]["west"] -= 360;
+					$this->isCrossingAntimeridian = true;
+				}
+				if(extension_loaded("geos")){
 				$this->brickEngine = new Brick\Geo\Engine\GEOSEngine();
-				$this->regionPolygon = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::EPSG);
+					$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::EPSG);
+					if($this->isCrossingAntimeridian)
+						$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region_display"])."))",self::EPSG);
+				}
 			}
 		}
 		/*
@@ -168,10 +180,14 @@
 			$nz = $z + 1;
 			for($nx = ($x * 2); $nx <= ($x * 2) + 1; $nx++){
 				for($ny = ($y * 2); $ny <= ($y * 2) + 1; $ny++){
-					$display = true;
 					$tilecoords = Gis::tileCoordZXY($nz,$nx,$ny,self::EPSG);
-					if(!is_null($this->regionPolygon))
-						$display = $this->brickEngine->intersects(Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($tilecoords)."))",self::EPSG),$this->regionPolygon);
+					if(!is_null($this->regionPolygons)){
+						$display = false;
+						foreach($this->regionPolygons as $regionPolygon)
+							$display = $display || $this->brickEngine->intersects($current = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($tilecoords)."))",self::EPSG),$regionPolygon);
+					} else {
+						$display = true;
+					}
 					if($display){
 						$groundOverlay .= $this->getGroundOverlay($nz,$nx,$ny,$tilecoords);
 						if($nz < $this->src["maxZoom"])
@@ -184,8 +200,8 @@
 				$this->kml .= $networkLink;
 		}
 		public function createFromBbox() {
-			if(is_array($this->src["region"])){
-				$bbox = $this->src["region"];
+			if(is_array($this->src["region_display"])){
+				$bbox = $this->src["region_display"];
 				if(self::$displayRegion){
 					$placemarkItems = [
 						self::createElement("styleUrl","#linegreen"),
