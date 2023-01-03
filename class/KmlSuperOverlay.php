@@ -108,7 +108,7 @@
 				$this->isOverlay = true;
 			if(extension_loaded("geos") && is_array($this->src["region"])){
 				$this->brickEngine = new Brick\Geo\Engine\GEOSEngine();
-				$this->regionPolygon = Brick\Geo\Polygon::fromText("POLYGON ((".self::bboxToWkt($this->src["region"])."))");
+				$this->regionPolygon = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::EPSG);
 			}
 		}
 		/*
@@ -171,7 +171,7 @@
 					$display = true;
 					$tilecoords = Gis::tileCoordZXY($nz,$nx,$ny,self::EPSG);
 					if(!is_null($this->regionPolygon))
-						$display = $this->brickEngine->intersects(Brick\Geo\Polygon::fromText("POLYGON ((".self::bboxToWkt($tilecoords)."))"),$this->regionPolygon);
+						$display = $this->brickEngine->intersects(Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($tilecoords)."))",self::EPSG),$this->regionPolygon);
 					if($display){
 						$groundOverlay .= $this->getGroundOverlay($nz,$nx,$ny,$tilecoords);
 						if($nz < $this->src["maxZoom"])
@@ -192,7 +192,7 @@
 						self::createElement("Polygon",
 							self::createElement("outerBoundaryIs",
 								self::createElement("LinearRing",
-									self::createElement("coordinates",self::bboxToLinearRing($bbox)))))
+									self::createElement("coordinates",Gis::bboxToLinearRing($bbox)))))
 					];
 					$pmlsbbox =self::createElement("Placemark",$placemarkItems,"region");
 				}
