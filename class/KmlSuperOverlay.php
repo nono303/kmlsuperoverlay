@@ -205,10 +205,12 @@
 				if(self::$displayRegion){
 					$placemarkItems = [
 						self::createElement("styleUrl","#linegreen"),
-						self::createElement("Polygon",
+						self::createElement("Polygon",[
+							self::createElement("tessellate",1),
 							self::createElement("outerBoundaryIs",
 								self::createElement("LinearRing",
-									self::createElement("coordinates",Gis::bboxToLinearRing($bbox)))))
+									self::createElement("coordinates",Gis::bboxToLinearRing($bbox))))
+						])
 					];
 					$pmlsbbox =self::createElement("Placemark",$placemarkItems,"region");
 				}
@@ -296,6 +298,8 @@
 			$groundItems = [
 				self::createElement("Region", $regionItems),
 				self::createElement("drawOrder",$z),
+				// https://gis.stackexchange.com/a/419505
+				self::createElement("gx:altitudeMode","relativeToSeaFloor"),
 				self::createElement("Icon",self::createElement("href",$this->getUrl($z,$x,$y))),
 				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tilecoords, self::$altitude))),
 			];
