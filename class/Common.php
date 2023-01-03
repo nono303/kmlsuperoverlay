@@ -1,18 +1,4 @@
 <?php
-	if (intval(PHP_VERSION[0]) < 8) {
-		function str_contains($haystack, $needle): bool {
-			return '' === $needle || false !== strpos($haystack, $needle);
-		}
-
-		function str_starts_with($haystack ,$needle) {
-			return $needle === "" || strpos($haystack, $needle) === 0;
-		}
-
-		function str_ends_with($haystack ,$needle) {
-			return $needle === "" || substr($haystack, -strlen($needle)) === $needle;
-		}
-	}
-
 	class Common {
 		public static function getXmlFileAsAssocArray($xmlfile, &$rootname = null){
 			if(!is_file($xmlfile))
@@ -20,7 +6,7 @@
 			// https://stackoverflow.com/q/6167279
 			$xml = Common::xml_load_file($xmlfile,'SimpleXMLElement', LIBXML_NOCDATA);
 			$rootname = $xml->getName();
-			return json_decode(json_encode($xml), TRUE);
+			return json_decode(json_encode($xml), true);
 		}
 
 		public static function assocArrayToXml($array){
