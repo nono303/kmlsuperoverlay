@@ -36,7 +36,10 @@
 			"wrap" => false,
 			"clean" => true,
 		];
-		// !! <PolyStyle><fill>0</fill></PolyStyle> bug: don't follow longitude curve / <PolyStyle><color>00ffffff</color></PolyStyle> OK
+		/*
+			<PolyStyle><fill>0</fill></PolyStyle>			is buggy: don't follow longitude curve
+			<PolyStyle><color>00ffffff</color></PolyStyle>	is OK
+		*/
 		private static $kmlformat = [
 			"header" => 
 				"<?xml version='1.0' encoding='utf-8'?>
@@ -53,13 +56,29 @@
 		];
 		private static $lod = [
 			"groundOverlay" => [
-				"minLodPixels" => 128, 
+				/* 
+					display tile when minLodPixels is reached on the current view. 
+					* 256 correspond to tile size = 1:1
+					* 128 (1:2) might result in too little (unreadable) tiles
+				*/
+				"minLodPixels" => 256,
+				/*
+					undisplay tile when maxLodPixels is reached on the current view. 
+					* 512 correspond to double tile size = 2:1
+					* -1  to disable undisplay (high memory load for GoogleEarth)
+				*/
 				"maxLodPixels" => 512, 
 				"minFadeExtent" => -1, 
 				"maxFadeExtent" => -1
 			],
 			"networkLink" => [
-				"minLodPixels" => 128, 
+				/*
+					load the 'zoom in' networkLink minLodPixels is reached on the current view. 
+					* 192 for loading link before groundOverlay can be displayed
+					* 256 might result in latency to display groundOverlay
+					* 64  might result unnecessary load on server
+				*/
+				"minLodPixels" => 192, 
 				"maxLodPixels" => -1, 
 				"minFadeExtent" => -1, 
 				"maxFadeExtent" => -1
@@ -351,7 +370,7 @@
 						return str_replace('{$bbox}',Gis::tileEdges($x, $y, $z,3857),$this->src["url"]);
 					} else {
 						throw new Exception("unsupported Projection EPSG:".$curepsg." in '".$this->src["url"]."'");
-						/*
+						/* 
 							Not activated cause require cs2cs and lot of libs, deps...
 						$bboxt = explode(",",$curbbox = Gis::tileEdges($x, $y, $z, self::EPSG));
 						$bbox = Gis::transformEpsg(self::EPSG, $curepsg,$bboxin = [[$bboxt[0],$bboxt[1]],[$bboxt[2],$bboxt[3]]]);
