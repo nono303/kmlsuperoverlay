@@ -13,6 +13,7 @@
 		private $regionPolygons;
 		private $brickEngine;
 		private $isCrossingAntimeridian = false;
+		private $transparency;
 		// debug
 		private $debug = false;
 		private $debugUrl = "";
@@ -155,6 +156,7 @@
 			}
 			$this->baseurl = $baseurl;
 			$this->src["overlay"] ? $this->groundOverlayLod = "transparent" : $this->groundOverlayLod = "opaque";
+			($this->src["backgroundColor"] && strlen($this->src["backgroundColor"]) == 9) ? $this->transparency = substr($this->src["backgroundColor"],-2) : $this->transparency = "FF";
 			if(is_array($this->src["region"])){
 				$this->src["region_display"] = $this->src["region"];
 				// region is crossing antimeridian
@@ -354,6 +356,8 @@
 				];
 			$groundItems = [
 				self::createElement("Region", $regionItems),
+				// https://stackoverflow.com/a/57596928/6343707 [ff:opaque 00:unvisible]
+				self::createElement("color", $this->transparency."ffffff"),
 				self::createElement("drawOrder",$z),
 				// https://gis.stackexchange.com/a/419505
 				self::createElement("gx:altitudeMode","relativeToSeaFloor"),

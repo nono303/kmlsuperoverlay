@@ -121,6 +121,13 @@ I provided **as an example** few mapsources for each format and feature in `./ma
 **Please have a look on map providers general conditions of use before** and see [Resources](#Resources) to enlarge your collection ;)  
 
 - Full documentation about `customMapSource` is available on [geos website](https://geos.readthedocs.io/en/latest/users.html#more-maps)  
+
+  - <backgroundColor> described on [mobac website](https://mobac.sourceforge.io/wiki/index.php/Custom_XML_Map_Sources#backgroundColor)  might be used to set **transparency** *(only last hex value is used)*
+
+    - **transparent**: `#FFFFFF`**`00`** :warning: Tile will not be visible
+    - **50% transparency**: `#FFFFFF`**`80`**
+
+    - **opaque**: `#FFFFFF`**`FF`** *(default)*
 - I added:  
   - <serverParts> described on [mobac website](https://mobac.sourceforge.io/wiki/index.php/Custom_XML_Map_Sources#serverParts)  
   - <overlay> not documented as it's actually specific:  
