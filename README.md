@@ -48,15 +48,15 @@ As you might know, there is no unique standard to request online tiles with some
 
 > `/kmlsuperoverlay` will be the **"how-to" end-point** example  
 
-#### 1.  httpd : add this to your host or vhost config:  
+#### 1.  httpd : add this to your host or vhost config *(or .htaccess)*:  
 
 ```  
 LoadModule rewrite_module ./modules/mod_rewrite.so  
 ...  
 <Location /kmlsuperoverlay >  
   RewriteEngine on  
-  RewriteCond %{REQUEST_FILENAME} !/kmlsuperoverlay/index.php  
-  RewriteRule ^(.*)$ /kmlsuperoverlay/index.php?qs=$1 [L,QSA]  
+  RewriteCond %{REQUEST_FILENAME} !index.php  
+  RewriteRule ^(.*)$ index.php?qs=$1 [L,QSA]  
 </Location>  
   
 <Location /kmlsuperoverlay/mapsources >  
@@ -123,11 +123,10 @@ I provided **as an example** few mapsources for each format and feature in `./ma
 - Full documentation about `customMapSource` is available on [geos website](https://geos.readthedocs.io/en/latest/users.html#more-maps)  
 
   - <backgroundColor> described on [mobac website](https://mobac.sourceforge.io/wiki/index.php/Custom_XML_Map_Sources#backgroundColor)  might be used to set **transparency** *(only last hex value is used)*
-
-    - **transparent**: `#FFFFFF`**`00`** :warning: Tile will not be visible
+- **transparent**: `#FFFFFF`**`00`** :warning: Tile will not be visible
     - **50% transparency**: `#FFFFFF`**`80`**
-
-    - **opaque**: `#FFFFFF`**`FF`** *(default)*
+    
+- **opaque**: `#FFFFFF`**`FF`** *(default)*
 - I added:  
   - <serverParts> described on [mobac website](https://mobac.sourceforge.io/wiki/index.php/Custom_XML_Map_Sources#serverParts)  
   - <overlay> not documented as it's actually specific:  
