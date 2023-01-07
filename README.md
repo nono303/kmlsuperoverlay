@@ -129,12 +129,6 @@ I provided **as an example** few mapsources for each format and feature in `./ma
 #### 8. :warning: ​Beware!  
 
 - Be sure to encode your `customMapSource` xml files in **utf8**, otherwise they'll not appear in your list if it contains accented char `#frenchy`  
-- mapsources with a high <minZoom> value and without <region> specified *(by default the region is entire world)* might be:   
-  - Long and memory consuming to generate for **PHP**   
-    - consider tunning`ini_set('memory_limit','1024M');` and/or add `set_time_limit(20);` accordingly.  
-  - Hard and memory consuming to render for **Google Earth** , according to your memory and GPU configuration.  
-  - High bandwidth consuming with the server   
-    - Note that some map providers apply a limitation on bandwidth and/or tiles per day and might ban your IP if they are considering your use out of their general conditions.  
 ### Credits  
 
 - **[@grst](https://github.com/grst)** for [geos](https://geos.readthedocs.io) - My main inspiration for this project.  
