@@ -1,0 +1,8 @@
+{
+    "license": "GPL-3.0-or-later",
+    "minimum-stability": "dev",
+    "discard-changes": "stash",
+    "require": {
+        "brick/geo": "dev-master"
+    }
+}
