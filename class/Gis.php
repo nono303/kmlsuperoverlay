@@ -140,7 +140,7 @@
 		private static function lat2mercator($l){
 			$r = deg2rad($l);
 			$lat = log((1+sin($r)) / (1-sin($r)));
-			return ($lat * EARTH_EQUATORIAL_RADIUS / M_PI);
+			return ($lat * EARTH_EQUATORIAL_RADIUS / 2);
 		}
 	}
 ?>
