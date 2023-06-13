@@ -32,7 +32,7 @@
 		'CS2CS' require PROJ cs2cs in path
 			https://proj.org/en/9.2/apps/cs2cs.html
 	*/
-	define("PROJ_BACKEND",PHPPROJ);
+	define("PROJ_BACKEND","PHPPROJ");
 
 	KmlSuperOverlay::controller(array_filter(explode("/",explode(URL_BASE,$_REQUEST['qs'])[1])),URL_BASE);
 ?>

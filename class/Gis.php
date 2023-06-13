@@ -78,6 +78,7 @@
 							[Gis::lonEdges1($x,$z),Gis::latEdges2($y,$z)],
 							[Gis::lonEdges2($x,$z),Gis::latEdges1($y,$z)]
 						],
+						$debug,
 						PROJ_BACKEND
 					)
 				);
