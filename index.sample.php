@@ -21,6 +21,18 @@
 	define("TIDY_KML",false);
 	// enable kml indent if TIDY_KML == false
 	define("INDENT_KML",true);
+	/* 
+		allow WMS mapsource with EPSG not in [4326, 3857, 900913, 3587, 54004, 41001, 102113, 102100, 3785]
+		
+		null disable
+		'PHPPROJ' require phpng-proj6+ extension 
+			https://github.com/swen100/phpng-proj
+		'GDALTRANSFORM' require gdaltransform in path
+			https://gdal.org/programs/gdaltransform.html
+		'CS2CS' require PROJ cs2cs in path
+			https://proj.org/en/9.2/apps/cs2cs.html
+	*/
+	define("PROJ_BACKEND",PHPPROJ);
 
 	KmlSuperOverlay::controller(array_filter(explode("/",explode(URL_BASE,$_REQUEST['qs'])[1])),URL_BASE);
 ?>

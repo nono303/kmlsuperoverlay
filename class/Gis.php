@@ -1,6 +1,9 @@
 <?php
 	// https://www.orekit.org/site-orekit-9.1/apidocs/org/orekit/utils/Constants.html#EIGEN5C_EARTH_EQUATORIAL_RADIUS
 	define("EARTH_EQUATORIAL_RADIUS",6378136.46);
+	
+	// for tileEdgesXxx functions
+	define("DEFAULT_EPSG",4326);
 
 	class Gis {
 		public static function bboxToWkt($bbox){
@@ -39,10 +42,14 @@
 			return floor((1 - log(tan(deg2rad($lat)) + 1 / cos(deg2rad($lat))) / M_PI) / 2 * pow(2, $zoom));
 		}
 
-		// Mercator - http://randochartreuse.free.fr/mobac2.x/documentation/#bsh
-		public static function tileEdges($x,$y,$z,$epsg=4326){
-			if($epsg == 4326)
-			return (
+		public static function tileEdgesArray($x,$y,$z,$epsg = DEFAULT_EPSG){
+			$array = explode(",",Gis::tileEdgesBbox($x,$y,$z,$epsg));
+			return ["west" => $array[0],"south" => $array[1],"east" => $array[2],"north" => $array[3]];
+		}
+
+		public static function tileEdgesBbox($x,$y,$z,$epsg = DEFAULT_EPSG){
+			if($epsg == DEFAULT_EPSG){
+				return (
 					Gis::lonEdges1($x,$z)
 				.",".
 					Gis::latEdges2($y,$z)
@@ -50,9 +57,10 @@
 					Gis::lonEdges2($x,$z)
 				.",".
 					Gis::latEdges1($y,$z)
-				);
-			if($epsg == 3857) 
-			return (
+					);
+			// https://epsg.io/3857
+			} elseif(in_array($curepsg,[3857,900913,3587,54004,41001,102113,102100,3785])) {
+				return (
 					Gis::lon2mercator(Gis::lonEdges1($x,$z))
 				.",".
 					Gis::lat2mercator(Gis::latEdges2($y,$z))
@@ -61,7 +69,19 @@
 				.",".
 					Gis::lat2mercator(Gis::latEdges1($y,$z))
 				);
-			throw new Exception("Unknown ESP '".$epsg."'");
+			} else {
+				return Coordinates::toBboxString(
+					Coordinates::transformEpsg(
+						DEFAULT_EPSG,
+						$epsg,
+						[
+							[Gis::lonEdges1($x,$z),Gis::latEdges2($y,$z)],
+							[Gis::lonEdges2($x,$z),Gis::latEdges1($y,$z)]
+						],
+						PROJ_BACKEND
+					)
+				);
+			}
 		}
 
 		private static function latEdges1($y,$z){
@@ -141,6 +161,51 @@
 			$r = deg2rad($l);
 			$lat = log((1+sin($r)) / (1-sin($r)));
 			return ($lat * EARTH_EQUATORIAL_RADIUS / 2);
+		}
+	}
+	
+	class Coordinates{
+		private static $projCache = [];
+		
+		// return: "lon0,lat0,lon1,lat1..."
+		public static function toBboxString($tabxy){
+			return implode(",",array_map(function($item){ return $item[0].",".$item[1]; },$tabxy));
+		}
+		
+		public static function transformEpsg($epsgin,$epsgout,$tabxy,&$debug = null, $backend="PHPPROJ"){
+			$start= microtime(true);
+			$debug = [];
+			if($backend == "PHPPROJ"){
+				if(!self::$projCache[$epsgin."-".$epsgout])
+					self::$projCache[$epsgin."-".$epsgout] = proj_create_crs_to_crs("EPSG:".$epsgin,"EPSG:".$epsgout);
+				$return = array_map(
+					function($item){ 
+						return [$item["x"],$item["y"]]; 
+					},$coords = proj_transform_array(self::$projCache[$epsgin."-".$epsgout],$tabxy)
+				);
+				if(($retcode = proj_get_errno(self::$projCache[$epsgin."-".$epsgout])) != 0)
+					throw new Exception("proj_transform_array() errno '".$retcode."': ".proj_get_errno_string($retcode));
+				return $return;
+			} elseif($backend == "CS2CS"){
+				// https://gis.stackexchange.com/a/162589
+				$cmd = "cs2cs.exe +init=epsg:".$epsgin." +to +init=epsg:".$epsgout." -d 10 2>&1";
+				$dst = self::subTransformGdalCs2cs($tabxy,$cmd,$debug, $backend);
+			} elseif($backend == "GDALTRANSFORM"){
+				// https://proj.org/apps/cs2cs.html#description
+				$cmd = "gdaltransform.exe -s_srs epsg:".$epsgin." -t_srs epsg:".$epsgout." -output_xy 2>&1";
+				$dst = self::subTransformGdalCs2cs($tabxy,$cmd,$debug, $backend);
+			} else {
+				throw new Exception("backend '".$backend."' not in [PHPPROJ,GDALTRANSFORM,CS2CS]");
+			}
+		
+			$debug = array_merge($debug,[
+				"backend" =>	$backend,
+				"epsgin" =>		$epsgin,
+				"epsgout" =>	$epsgout,
+				"dst" =>		$dst,
+				"time" =>		number_format(microtime(true)-$start,8)
+			]);
+			return $dst;
 		}
 	}
 ?>
