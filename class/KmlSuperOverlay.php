@@ -119,13 +119,26 @@
 			"minAltitude" => 0, 
 			"maxAltitude" => 0
 		];
-		/* 
-			for google earth compatibility
+		// https://gis.stackexchange.com/a/419505
+		private static $groundOverlayAltitudeMode = "relativeToSeaFloor";
+		// TODO externalize to official database (ex. json)
+		private static $tileMatrixMin = [
+			/* 
+				For Google Earth compatibility in WGS84 (4326)
 			* 2022-12-13
 				< 7.3.6.9285: 3
 				>= 7.3.6.9285: 5
 		*/
-		private static $minZoom = 5;
+			4326  => ["zoom" => 5],
+			// https://api.os.uk/maps/raster/v1/wmts?request=getcapabilities&service=wmts l. 512
+			27700 => [
+				"zoom" => 0, 
+				"minTileRow" => 0,
+				"maxTileRow" => 6,
+				"minTileCol" => 0,
+				"maxTileCol" => 4
+			]
+		];
 		private static $displayRegion = true;
 		private static $debugHtml = true;
 		// ".kml" || ".kmz"
@@ -170,9 +183,9 @@
 				}
 				if(extension_loaded("geos")){
 				$this->brickEngine = new Brick\Geo\Engine\GEOSEngine();
-					$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::$espg);
+					$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::$dstSrid);
 					if($this->isCrossingAntimeridian)
-						$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region_display"])."))",self::$espg);
+						$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region_display"])."))",self::$dstSrid);
 				}
 			}
 		}
@@ -231,16 +244,16 @@
 			$this->kml .= "<name>".$this->name."</name>";
 
 			// Region
-			$this->kml .= self::createElement("Region", [self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge(Gis::tileCoordZXY($z,$x,$y,self::$espg), self::$altitude)))]);
+			$this->kml .= self::createElement("Region", [self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge(Gis::tileEdgesArray($x,$y,$z,$this->src["projection"]), self::$altitude)))]);
 
 			$nz = $z + 1;
 			for($nx = ($x * 2); $nx <= ($x * 2) + 1; $nx++){
 				for($ny = ($y * 2); $ny <= ($y * 2) + 1; $ny++){
-					$tilecoords = Gis::tileCoordZXY($nz,$nx,$ny,self::$espg);
+					$tilecoords = Gis::tileEdgesArray($nx,$ny,$nz,$this->src["projection"]);
 					if(!is_null($this->regionPolygons)){
 						$display = false;
 						foreach($this->regionPolygons as $regionPolygon)
-							$display = $display || $this->brickEngine->intersects($current = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($tilecoords)."))",self::$espg),$regionPolygon);
+							$display = $display || $this->brickEngine->intersects($current = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($tilecoords)."))",self::$dstSrid,self::$dstSrid),$regionPolygon);
 					} else {
 						$display = true;
 					}
@@ -284,8 +297,16 @@
 			$this->kml .= $pmlsbbox;
 
 			// NetworkLink
-			foreach(Gis::ZXYFromBbox($bbox,self::$minZoom-1)["tiles"] as $nl)
-				$this->kml .= $this->getNetworkLink($nl["z"]-1,$nl["x"],$nl["y"],Gis::tileCoordZXY($nl["z"]-1,$nl["x"],$nl["y"],self::$espg));
+			if(self::$dstSrid == $this->src["projection"]){
+				foreach(Gis::ZXYFromBbox($bbox,self::$tileMatrixMin[$this->src["projection"]]["zoom"]-1)["tiles"] as $nl)
+					$this->kml .= $this->getNetworkLink($nl["z"]-1,$nl["x"],$nl["y"],Gis::tileEdgesArray($nl["x"],$nl["y"],$nl["z"]-1,self::$dstSrid));
+			} elseif(array_key_exists($this->src["projection"],self::$tileMatrixMin)) {
+				for($x = self::$tileMatrixMin[$this->src["projection"]]["minTileCol"]; $x <= self::$tileMatrixMin[$this->src["projection"]]["maxTileCol"]; $x++)
+					for($y = self::$tileMatrixMin[$this->src["projection"]]["minTileRow"]; $y <= self::$tileMatrixMin[$this->src["projection"]]["maxTileRow"]; $y++)
+						$this->kml .= $this->getNetworkLink(self::$tileMatrixMin[$this->src["projection"]]["zoom"],$x,$y,Gis::tileEdgesArray($x,$y,self::$tileMatrixMin[$this->src["projection"]]["zoom"],$this->src["projection"]));
+			} else {
+				throw new exception("Unknow TileMatrixSet for EPSG:".$this->src["projection"]);
+		}
 		}
 
 		public function createRoot($rootfolder,$name){
@@ -347,8 +368,8 @@
 			// maxZoom: we keep tile displayed even if zoom more
 			if($z == $this->src["maxZoom"]){
 				$lod["maxLodPixels"] = -1;
-			// minZoom: we keep tile displayed even if unzoom more (self::$minZoom for notile / $this->src["minZoom"] for served tile)
-			} elseif($z == self::$minZoom || $z == $this->src["minZoom"]){
+			// minZoom: we keep tile displayed even if unzoom more (self::$tileMatrixMin[$this->src["projection"]]["zoom"] for notile / $this->src["minZoom"] for served tile)
+			} elseif($z == self::$tileMatrixMin[$this->src["projection"]]["zoom"] || $z == $this->src["minZoom"]){
 				$lod["minLodPixels"] = -1;
 			// default notile png when server doesn't have tile for low zoom resolution
 			} elseif ($z < $this->src["minZoom"]){
@@ -363,8 +384,7 @@
 				// https://stackoverflow.com/a/57596928/6343707 [ff:opaque 00:unvisible]
 				self::createElement("color", $this->transparency."ffffff"),
 				self::createElement("drawOrder",$z),
-				// https://gis.stackexchange.com/a/419505
-				self::createElement("gx:altitudeMode","relativeToSeaFloor"),
+				self::createElement(/*"gx:*/"altitudeMode",self::$groundOverlayAltitudeMode),
 				self::createElement("Icon",self::createElement("href",$this->getUrl($z,$x,$y))),
 				self::createElement("LatLonAltBox",Common::assocArrayToXml(array_merge($tilecoords, self::$altitude))),
 			];
@@ -406,25 +426,11 @@
 				return str_replace(['{$z}','{$x}','{$y}'],[$z,$x,$y],$this->src["url"]);
 			// WMS {$bbox}
 			if(str_contains($this->src["url"],'{$bbox}')){
-				preg_match("/rs=epsg:([0-9]*)/i",$this->src["url"],$matches);
-				if($curepsg = $matches[1]){
-					if ($curepsg == "4326"){
-						return str_replace('{$bbox}',Gis::tileEdges($x, $y, $z,4326),$this->src["url"]);
-					} elseif ($curepsg == "3857" || $curepsg == "102100" || $curepsg == "900913") {
-						return str_replace('{$bbox}',Gis::tileEdges($x, $y, $z,3857),$this->src["url"]);
-					} else {
-						throw new Exception("unsupported Projection EPSG:".$curepsg." in '".$this->src["url"]."'");
-						/* 
-							Not activated cause require cs2cs and lot of libs, deps...
-							$bboxt = explode(",",$curbbox = Gis::tileEdges($x, $y, $z, self::$espg));
-							$bbox = Gis::transformEpsg(self::$espg, $curepsg,$bboxin = [[$bboxt[0],$bboxt[1]],[$bboxt[2],$bboxt[3]]]);
-						*/
+				// urldecode ':' <> '%20'
+				preg_match("/rs=epsg:([0-9]*)/i",urldecode($this->src["url"]),$matches);
+				return str_replace('{$bbox}',implode(",",Gis::tileEdgesArray($x, $y, $z,$matches[1])),$this->src["url"]);
 					}
-				} else {
-					throw new Exception("unknow Projection - EPSG FOR CRS or SRS - in '".$this->src["url"]."' Is that a bug?");
 				}
-			}
-		}
 
 		/*
 			PRIVATE STATIC
