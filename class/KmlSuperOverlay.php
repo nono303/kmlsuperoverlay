@@ -151,6 +151,8 @@
 			$this->nbnl=0;
 				$this->startTime = microtime(true);
 				$this->ruTime = getrusage();
+			if($this->src && !array_key_exists("projection",$this->src))
+				$this->src["projection"] = self::$dstSrid;
 			if($this->debug){
 				$this->debugUrl = "/debug";
 				self::$outFormat = ".kml";
