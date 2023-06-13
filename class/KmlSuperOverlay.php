@@ -401,13 +401,10 @@
 			// QUAD {$q}
 			if(str_contains($this->src["url"],'{$q}'))
 				return str_replace('{$q}',Gis::tileToQuadKey($x,$y,$z),$this->src["url"]);
-			// WMS {$bbox}
-			if(str_contains($this->src["url"],'{$q}'))
-				return str_replace('{$q}',Gis::tileToQuadKey($x,$y,$z),$this->src["url"]);
 			// ZXY {$y}
 			if(str_contains($this->src["url"],'{$y}'))
 				return str_replace(['{$z}','{$x}','{$y}'],[$z,$x,$y],$this->src["url"]);
-			// WMS
+			// WMS {$bbox}
 			if(str_contains($this->src["url"],'{$bbox}')){
 				preg_match("/rs=epsg:([0-9]*)/i",$this->src["url"],$matches);
 				if($curepsg = $matches[1]){
