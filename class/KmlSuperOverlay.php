@@ -76,7 +76,7 @@
 				maxLodPixels: undisplay tile when value is reached on the current view. 
 				- groundOverlay
 					* 512 correspond to double tile size = 2:1
-					* -1  to disable undisplay (high memory load for GoogleEarth)
+					* -1  to disable undisplay (high memory load for Google Earth)
 				
 				xxxFadeExtent: INSIDE minLodPixels <> maxLodPixels windows
 					0%:		< minLodPixels
@@ -99,7 +99,7 @@
 					"minLodPixels" => 256,
 					"maxLodPixels" => 1024, 
 					"minFadeExtent" => -1, 
-					"maxFadeExtent" => 256
+					"maxFadeExtent" => -1
 				],
 				"notile" => [
 					"minLodPixels" => 256,
