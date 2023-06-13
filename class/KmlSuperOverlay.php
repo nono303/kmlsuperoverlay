@@ -133,7 +133,8 @@
 
 		// name for the default "notile" png (preferably transparent with alpha). must be in this script script
 		private static $notilePngPath = "zoom.png";
-		private static $espg = 4326;
+		// defaut spatial reference in Google Earth
+		private static $dstSrid = 4326;
 
 		/*
 			CONSTRUCTOR
