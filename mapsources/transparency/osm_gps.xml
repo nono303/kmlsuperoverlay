@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- mobac-ignore: id folder overlay region id north south east west -->
+<customMapSource>
+	<name><![CDATA[OpenStreetMap - Public GPS traces]]></name>
+	<minZoom>5</minZoom>
+	<maxZoom>20</maxZoom>
+	<url><![CDATA[https://gps-{$serverpart}.tile.openstreetmap.org/lines/{$z}/{$x}/{$y}.png]]></url>
+	<serverParts>a b c</serverParts>
+</customMapSource>
