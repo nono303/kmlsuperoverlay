@@ -318,6 +318,7 @@
 					];
 					$networkItems = [
 						self::createElement("visibility",0),
+						self::createElement("open",0),
 						self::createElement("Link",$linkItems),
 					];
 					$this->kml .= self::createElement("NetworkLink", $networkItems,$xmlcontent["name"]);
