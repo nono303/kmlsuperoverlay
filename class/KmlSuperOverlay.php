@@ -182,7 +182,7 @@
 					$this->isCrossingAntimeridian = true;
 				}
 				if(extension_loaded("geos")){
-				$this->brickEngine = new Brick\Geo\Engine\GEOSEngine();
+					$this->brickEngine = new Brick\Geo\Engine\GEOSEngine();
 					$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region"])."))",self::$dstSrid);
 					if($this->isCrossingAntimeridian)
 						$this->regionPolygons[] = Brick\Geo\Polygon::fromText("POLYGON ((".Gis::bboxToWkt($this->src["region_display"])."))",self::$dstSrid);
@@ -206,8 +206,15 @@
 				$doc = new DOMDocument();
 				$doc->preserveWhiteSpace = false;
 				$doc->formatOutput = true;
-				$doc->loadXML($this->kml);
-				$this->kml = $doc->saveXML();
+				if (@$doc->loadXML($this->kml) === false){
+					ob_clean();
+					header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+					echo "<span style='background: #d6002e; color: white; font-family: Arial;'>Kml error: ".json_encode(libxml_get_last_error(),JSON_PRETTY_PRINT)."</span><hr>";
+					echo "<pre>".htmlentities($this->kml)."</pre>";
+					exit(-1);
+			}
+				// https://bugs.php.net/bug.php?id=50989
+				$this->kml = $doc->saveXML(null, LIBXML_NOXMLDECL);
 			}
 			if(!$this->debug){
 				ob_clean();
