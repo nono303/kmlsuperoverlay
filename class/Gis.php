@@ -30,6 +30,7 @@
 		}
 
 		public static function ZXYFromBbox($bbox,$z){
+			$bbox = self::bboxArrayFromString($bbox);
 			$modulo = 2 ** $z;
 			$bbox["west"] > $bbox["east"] ? $addeast = $modulo : $addeast = 0;
 			for ($x = Gis::lonToTileX($bbox["west"],$z) ; $x <= Gis::lonToTileX($bbox["east"],$z)+$addeast; $x++)
