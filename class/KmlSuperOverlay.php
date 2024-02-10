@@ -443,14 +443,6 @@
 			PRIVATE STATIC
 		*/
 
-		private static function bboxToWkt($bbox){
-			return $bbox["west"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["north"];
-		}
-
-		private static function bboxToLinearRing($bbox){
-			return $bbox["west"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["north"].",10";
-		}
-
 		private static function createElement($itemName, $items, $namevalue = null){
 			if(!is_null($namevalue))
 				$ret .= "<name><![CDATA[".$namevalue."]]></name>";
