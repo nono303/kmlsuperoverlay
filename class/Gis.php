@@ -1,19 +1,30 @@
 <?php
 	// https://www.orekit.org/site-orekit-9.1/apidocs/org/orekit/utils/Constants.html#EIGEN5C_EARTH_EQUATORIAL_RADIUS
 	define("EARTH_EQUATORIAL_RADIUS",6378136.46);
-	
+
 	// for tileEdgesXxx functions
 	define("DEFAULT_EPSG",4326);
 
 	class Gis {
+
+		// https://wiki.openstreetmap.org/wiki/Bounding_box
+		private static function bboxArrayFromString($in){
+			is_string($in) ?
+				list($bbox["west"], $bbox["south"], $bbox["east"], $bbox["north"]) = explode(',', $in) :
+				$bbox = $in;
+			return $bbox;
+		}
+
 		public static function bboxToWkt($bbox){
-			return $bbox["west"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["north"].", ".$bbox["east"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["south"].", ".$bbox["west"]." ".$bbox["north"];
+			$bbox = self::bboxArrayFromString($bbox);
+			return $bbox["south"]." ".$bbox["west"].",".$bbox["south"]." ".$bbox["east"].",".$bbox["north"]." ".$bbox["east"].",".$bbox["north"]." ".$bbox["west"].",".$bbox["south"]." ".$bbox["west"];
 		}
-		
+
 		public static function bboxToLinearRing($bbox){
-			return $bbox["west"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["south"].",0 ".$bbox["west"].",".$bbox["north"].",10";
+			$bbox = self::bboxArrayFromString($bbox);
+			return $bbox["west"].",".$bbox["south"].",0 ".$bbox["east"].",".$bbox["south"].",0 ".$bbox["east"].",".$bbox["north"].",0 ".$bbox["west"].",".$bbox["north"].",0 ".$bbox["west"].",".$bbox["south"].",0";
 		}
-		
+
 		public static function revY($z,$y){
 			return (pow(2, $z)-1-$y);
 		}
@@ -126,7 +137,7 @@
 		}
 
 		// http://randochartreuse.free.fr/mobac2.x/documentation/#bsh
-		public static function tileToQuadKey($x, $y, $zoom){ 
+		public static function tileToQuadKey($x, $y, $zoom){
 			$res="";
 			$prx = $osy = $osx = pow(2,$zoom-1);
 			for ($i=0;$i<($zoom);$i++) {
@@ -164,15 +175,15 @@
 			return ($lat * EARTH_EQUATORIAL_RADIUS / 2);
 		}
 	}
-	
+
 	class Coordinates{
 		private static $projCache = [];
-		
+
 		// return: "lon0,lat0,lon1,lat1..."
 		public static function toBboxString($tabxy){
 			return implode(",",array_map(function($item){ return $item[0].",".$item[1]; },$tabxy));
 		}
-		
+
 		public static function transformEpsg($epsgin,$epsgout,$tabxy,&$debug = null, $backend="PHPPROJ"){
 			$start= microtime(true);
 			$debug = [];
@@ -180,8 +191,8 @@
 				if(!self::$projCache[$epsgin."-".$epsgout])
 					self::$projCache[$epsgin."-".$epsgout] = proj_create_crs_to_crs("EPSG:".$epsgin,"EPSG:".$epsgout);
 				$return = array_map(
-					function($item){ 
-						return [$item["x"],$item["y"]]; 
+					function($item){
+						return [$item["x"],$item["y"]];
 					},$coords = proj_transform_array(self::$projCache[$epsgin."-".$epsgout],$tabxy)
 				);
 				if(($retcode = proj_get_errno(self::$projCache[$epsgin."-".$epsgout])) != 0)
@@ -198,7 +209,7 @@
 			} else {
 				throw new Exception("backend '".$backend."' not in [PHPPROJ,GDALTRANSFORM,CS2CS]");
 			}
-		
+
 			$debug = array_merge($debug,[
 				"backend" =>	$backend,
 				"epsgin" =>		$epsgin,
