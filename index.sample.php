@@ -14,25 +14,27 @@
 		}
 	}
 	// !! with ending '/'
-	define("MAP_SOURCE_ROOT","./mapsources/");
+	const MAP_SOURCE_ROOT = "./mapsources/";
 	// !! with ending '/'
-	define("URL_BASE","/kmlsuperoverlay/");
+	const URL_BASE = "/kmlsuperoverlay/";
 	// enable (slow & higher memory usage) or disable kml clean & format with tidy extension
-	define("TIDY_KML",false);
+	const TIDY_KML = false;
 	// enable kml indent if TIDY_KML == false
-	define("INDENT_KML",true);
-	/* 
+	const INDENT_KML = true;
+	/*
 		allow WMS mapsource with EPSG not in [4326, 3857, 900913, 3587, 54004, 41001, 102113, 102100, 3785]
-		
+
 		null disable
-		'PHPPROJ' require phpng-proj6+ extension 
+		'PHPPROJ' require phpng-proj6+ extension
 			https://github.com/swen100/phpng-proj
 		'GDALTRANSFORM' require gdaltransform in path
 			https://gdal.org/programs/gdaltransform.html
 		'CS2CS' require PROJ cs2cs in path
 			https://proj.org/en/9.2/apps/cs2cs.html
 	*/
-	define("PROJ_BACKEND","PHPPROJ");
+	const PROJ_BACKEND = "PHPPROJ";
+	// JSON_ENCODE_OPTIONS used to display errors that may occur during indentation
+	const JSON_ENCODE_OPTIONS = JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
 
 	KmlSuperOverlay::controller(array_filter(explode("/",explode(URL_BASE,$_REQUEST['qs'])[1])),URL_BASE);
 ?>

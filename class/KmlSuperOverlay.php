@@ -14,7 +14,7 @@
 		private $brickEngine;
 		private $isCrossingAntimeridian = false;
 		private $transparency;
-		// debug
+			// debug
 		private $debug = false;
 		private $debugUrl = "";
 		private $startTime;
@@ -32,10 +32,10 @@
 			"west" => -180,	/* minLon */
 		];
 		private static $tidyOptions = [
-			"input-xml"=> true, 
-			"output-xml" => true, 
-			"indent" => true, 
-			"indent-cdata" => true, 
+			"input-xml"=> true,
+			"output-xml" => true,
+			"indent" => true,
+			"indent-cdata" => true,
 			"wrap" => false,
 			"clean" => true,
 		];
@@ -44,27 +44,27 @@
 			<PolyStyle><color>00ffffff</color></PolyStyle>	is OK
 		*/
 		private static $kmlformat = [
-			"header" => 
+			"header" =>
 				"<?xml version='1.0' encoding='utf-8'?>
-				<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gx='http://www.google.com/kml/ext/2.2'>
+				<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gx='http://www.google.com/kml/ext/2.2' xmlns:xal='urn:oasis:names:tc:ciq:xsdschema:xAL:2.0'>
 				<Document>
-				<Style id='linered'><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
-				<Style id='linegreen'><LineStyle><color>ff00ff00</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
+				<Style id='linered'><LineStyle><width>2</width><color>ff0000ff</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
+				<Style id='linegreen'><LineStyle><width>2</width><color>ff00ff00</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
 				<Style id='folderCheckOffOnly'><ListStyle><listItemType>checkOffOnly</listItemType><bgColor>bbfcf7de</bgColor>
 					<ItemIcon><state>open</state><href>http://maps.google.com/mapfiles/kml/shapes/donut.png</href></ItemIcon>
 					<ItemIcon><state>closed</state><href>http://maps.google.com/mapfiles/kml/shapes/forbidden.png</href></ItemIcon>
 				</ListStyle></Style>",
-			"footer" => 
+			"footer" =>
 				"</Document></kml>"
 		];
 		private static $lod = [
-				/* 
+			/*
 				--- Level of Detail ---
-				
+
 				https://developers.google.com/kml/documentation/regions#fade-extent
 				https://www.google.com/intl/fr-CA_ALL/earth/outreach/learn/avoiding-overload-with-regions/
 
-				minLodPixels: display tile when value is reached on the current view. 
+				minLodPixels: display tile when value is reached on the current view.
 				- groundOverlay
 					* 256 correspond to tile size = 1:1
 					* 128 (1:2) might result in too little (unreadable) tiles
@@ -72,67 +72,67 @@
 					* 192 for loading link before groundOverlay can be displayed
 					* 256 might result in latency to display groundOverlay
 					* 64  might result unnecessary load on networkLink server and tiles concurrent request
-				
-				maxLodPixels: undisplay tile when value is reached on the current view. 
+
+				maxLodPixels: undisplay tile when value is reached on the current view.
 				- groundOverlay
 					* 512 correspond to double tile size = 2:1
 					* -1  to disable undisplay (high memory load for Google Earth)
-				
+
 				xxxFadeExtent: INSIDE minLodPixels <> maxLodPixels windows
 					0%:		< minLodPixels
-					100%:	> minLodPixels + minFadeExtent 
-								&& 
+					100%:	> minLodPixels + minFadeExtent
+								&&
 							< maxLodPixels - maxFadeExtent
 					0%:		> maxLodPixels - maxFadeExtent
 
 				groundOverlay Level of Detail values might be different for opaque (readable) and transparent (precise) tiles
 				- notile is for the default notile png when server doesn't have tile for low zoom resolution
-				*/
+			*/
 			"groundOverlay" => [
 				"transparent" => [
 					"minLodPixels" => 192,
-					"maxLodPixels" => 640, 
-					"minFadeExtent" => -1, 
+					"maxLodPixels" => 640,
+					"minFadeExtent" => -1,
 					"maxFadeExtent" => -1
 				],
 				"opaque" => [
 					"minLodPixels" => 256,
-					"maxLodPixels" => 1024, 
-					"minFadeExtent" => -1, 
+					"maxLodPixels" => 1024,
+					"minFadeExtent" => -1,
 					"maxFadeExtent" => -1
 				],
 				"notile" => [
 					"minLodPixels" => 256,
-				"maxLodPixels" => 512, 
-				"minFadeExtent" => -1, 
-				"maxFadeExtent" => -1
+					"maxLodPixels" => 512,
+					"minFadeExtent" => -1,
+					"maxFadeExtent" => -1
 				]
 			],
 			"networkLink" => [
-				"minLodPixels" => 176, 
-				"maxLodPixels" => -1, 
-				"minFadeExtent" => -1, 
+				"minLodPixels" => 176,
+				"maxLodPixels" =>  -1,
+				"minFadeExtent" => -1,
 				"maxFadeExtent" => -1
 			]
 		];
 		private static $altitude = [
-			"minAltitude" => 0, 
+			"minAltitude" => 0,
 			"maxAltitude" => 0
 		];
 		// https://gis.stackexchange.com/a/419505
 		private static $groundOverlayAltitudeMode = "relativeToSeaFloor";
 		// TODO externalize to official database (ex. json)
 		private static $tileMatrixMin = [
-			/* 
+			/*
 				For Google Earth compatibility in WGS84 (4326)
-			* 2022-12-13
-				< 7.3.6.9285: 3
-				>= 7.3.6.9285: 5
-		*/
+				* 2022-12-13
+					< 7.3.6.9285:	3
+					>= 7.3.6.9285:	5
+			*/
 			4326  => ["zoom" => 5],
 			// https://api.os.uk/maps/raster/v1/wmts?request=getcapabilities&service=wmts l. 512
 			27700 => [
-				"zoom" => 0, 
+				"zoom" => 0,
 				"minTileRow" => 0,
 				"maxTileRow" => 6,
 				"minTileCol" => 0,
@@ -162,8 +162,8 @@
 			$this->src = $src;
 			$this->debug = $debug;
 			$this->nbnl=0;
-				$this->startTime = microtime(true);
-				$this->ruTime = getrusage();
+			$this->startTime = microtime(true);
+			$this->ruTime = getrusage();
 			if($this->src && !array_key_exists("projection",$this->src))
 				$this->src["projection"] = self::$dstSrid;
 			if($this->debug){
@@ -195,7 +195,7 @@
 		*/
 
 		public function display(){
-			$this->kml = 
+			$this->kml =
 				self::$kmlformat["header"].
 				$description.
 				$this->kml.
@@ -209,12 +209,11 @@
 				if (@$doc->loadXML($this->kml) === false){
 					ob_clean();
 					header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
-					echo "<span style='background: #d6002e; color: white; font-family: Arial;'>Kml error: ".json_encode(libxml_get_last_error(),JSON_PRETTY_PRINT)."</span><hr>";
+					echo "<span style='background: #d6002e; color: white; font-family: Arial;'>Kml error: ".json_encode(libxml_get_last_error(),JSON_ENCODE_OPTIONS)."</span><hr>";
 					echo "<pre>".htmlentities($this->kml)."</pre>";
 					exit(-1);
-			}
-				// https://bugs.php.net/bug.php?id=50989
-				$this->kml = $doc->saveXML(null, LIBXML_NOXMLDECL);
+				}
+				$this->kml = $doc->saveXML();
 			}
 			if(!$this->debug){
 				ob_clean();
@@ -300,8 +299,8 @@
 			$this->kml .= "<name>".$this->name."</name>";
 
 			// Region
-			$this->kml .= self::createElement("Region", [self::createElement("LatLonAltBox",Common::assocArrayToXml($bbox))]);
 			$this->kml .= $pmlsbbox;
+			$this->kml .= self::createElement("Region", [self::createElement("LatLonAltBox",Common::assocArrayToXml($bbox))]);
 
 			// NetworkLink
 			if(self::$dstSrid == $this->src["projection"]){
@@ -313,7 +312,7 @@
 						$this->kml .= $this->getNetworkLink(self::$tileMatrixMin[$this->src["projection"]]["zoom"],$x,$y,Gis::tileEdgesArray($x,$y,self::$tileMatrixMin[$this->src["projection"]]["zoom"],$this->src["projection"]));
 			} else {
 				throw new exception("Unknow TileMatrixSet for EPSG:".$this->src["projection"]);
-		}
+			}
 		}
 
 		public function createRoot($rootfolder,$name){
@@ -328,7 +327,7 @@
 				$filear = explode("/",$uri = str_replace([$rootfolder,".xml"],["","/"],$name));
 				$rootname = null;
 				$xmlcontent = Common::getXmlFileAsAssocArray($name,$rootname);
-				// filter 
+				// filter
 				if($rootname == "customMapSource"){
 					// to be complient with https://github.com/grst/geos, just prefixed filesystem folders with '-' to be in first on my layer list & remove it here for display
 					$mapsource["folder"] = preg_replace("/^-/","",$filear[0]);
@@ -436,8 +435,8 @@
 				// urldecode ':' <> '%20'
 				preg_match("/rs=epsg:([0-9]*)/i",urldecode($this->src["url"]),$matches);
 				return str_replace('{$bbox}',implode(",",Gis::tileEdgesArray($x, $y, $z,$matches[1])),$this->src["url"]);
-					}
-				}
+			}
+		}
 
 		/*
 			PRIVATE STATIC
@@ -498,8 +497,8 @@
 					header("HTTP/1.0 404 Not Found");
 					echo "Layer '".$path."' doesn't exist";
 				}
-					exit();
-				}
+				exit();
 			}
 		}
+	}
 ?>
