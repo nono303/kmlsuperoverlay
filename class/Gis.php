@@ -1,11 +1,16 @@
 <?php
-	// https://www.orekit.org/site-orekit-9.1/apidocs/org/orekit/utils/Constants.html#EIGEN5C_EARTH_EQUATORIAL_RADIUS
-	define("EARTH_EQUATORIAL_RADIUS",6378136.46);
-
-	// for tileEdgesXxx functions
-	define("DEFAULT_EPSG",4326);
-
 	class Gis {
+
+		// for distances: getRadiusAtLat() - https://www.orekit.org/site-orekit-9.1/apidocs/org/orekit/utils/Constants.html#EIGEN5C_EARTH_EQUATORIAL_RADIUS
+		const WGS_ELLIPSOID = [ "a" => 6378137.0, "b" => 6356752.314 ]; // meter
+		// for coordinates: geod -le | grep -i wgs84
+		const EARTH_EQUATORIAL_RADIUS = self::WGS_ELLIPSOID["a"];
+
+		// for tileEdgesXxx functions
+		const DEFAULT_EPSG = 4326;
+
+		// https://developers.google.com/kml/schema/kml22gx.xsd
+		const KMLHEAD = '<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:xal="urn:oasis:names:tc:ciq:xsdschema:xAL:2.0">';
 
 		// https://wiki.openstreetmap.org/wiki/Bounding_box
 		private static function bboxArrayFromString($in){
@@ -33,14 +38,14 @@
 			$bbox = self::bboxArrayFromString($bbox);
 			$modulo = 2 ** $z;
 			$bbox["west"] > $bbox["east"] ? $addeast = $modulo : $addeast = 0;
-			for ($x = Gis::lonToTileX($bbox["west"],$z) ; $x <= Gis::lonToTileX($bbox["east"],$z)+$addeast; $x++)
-				for ($y = Gis::latToTileY($bbox["north"],$z) ; $y <= Gis::latToTileY($bbox["south"],$z); $y++)
+			for ($x = self::lonToTileX($bbox["west"],$z) ; $x <= self::lonToTileX($bbox["east"],$z)+$addeast; $x++)
+				for ($y = self::latToTileY($bbox["north"],$z) ; $y <= self::latToTileY($bbox["south"],$z); $y++)
 					$res["tiles"][] = ["z" =>($z+1),"x" => (($x+$modulo) % $modulo),"y" => $y];
 			return $res;
 		}
 
 		public static function tileCoordZXY($z,$x,$y,$epsg=4326){
-			$array = explode(",",Gis::tileEdges($x,$y,$z,$epsg));
+			$array = explode(",",self::tileEdges($x,$y,$z,$epsg));
 			return ["west" => $array[0],"south" => $array[1],"east" => $array[2],"north" => $array[3]];
 		}
 
@@ -54,75 +59,73 @@
 			return floor((1 - log(tan(deg2rad($lat)) + 1 / cos(deg2rad($lat))) / M_PI) / 2 * pow(2, $zoom));
 		}
 
-		public static function tileEdgesArray($x,$y,$z,$epsg = DEFAULT_EPSG){
-			$array = explode(",",Gis::tileEdgesBbox($x,$y,$z,$epsg));
+		public static function tileEdgesArray($x,$y,$z,$epsg = self::DEFAULT_EPSG){
+			$array = explode(",",self::tileEdgesBbox($x,$y,$z,$epsg));
 			return ["west" => $array[0],"south" => $array[1],"east" => $array[2],"north" => $array[3]];
 		}
 
-		public static function tileEdgesBbox($x,$y,$z,$epsg = DEFAULT_EPSG){
-			if($epsg == DEFAULT_EPSG){
+		public static function tileEdgesBbox($x,$y,$z,$epsg = self::DEFAULT_EPSG){
+			if($epsg == self::DEFAULT_EPSG){
 				return (
-					Gis::lonEdges1($x,$z)
+					self::lonEdges1($x,$z)
 				.",".
-					Gis::latEdges2($y,$z)
+					self::latEdges2($y,$z)
 				.",".
-					Gis::lonEdges2($x,$z)
+					self::lonEdges2($x,$z)
 				.",".
-					Gis::latEdges1($y,$z)
+					self::latEdges1($y,$z)
 					);
 			// https://epsg.io/3857
 			} elseif(in_array($curepsg,[3857,900913,3587,54004,41001,102113,102100,3785])) {
 				return (
-					Gis::lon2mercator(Gis::lonEdges1($x,$z))
+					self::lon2mercator(self::lonEdges1($x,$z))
 				.",".
-					Gis::lat2mercator(Gis::latEdges2($y,$z))
+					self::lat2mercator(self::latEdges2($y,$z))
 				.",".
-					Gis::lon2mercator(Gis::lonEdges2($x,$z))
+					self::lon2mercator(self::lonEdges2($x,$z))
 				.",".
-					Gis::lat2mercator(Gis::latEdges1($y,$z))
+					self::lat2mercator(self::latEdges1($y,$z))
 				);
 			} else {
 				return Coordinates::toBboxString(
 					Coordinates::transformEpsg(
-						DEFAULT_EPSG,
+						self::DEFAULT_EPSG,
 						$epsg,
 						[
-							[Gis::lonEdges1($x,$z),Gis::latEdges2($y,$z)],
-							[Gis::lonEdges2($x,$z),Gis::latEdges1($y,$z)]
-						],
-						$debug,
-						PROJ_BACKEND
+							[self::lonEdges1($x,$z),self::latEdges2($y,$z)],
+							[self::lonEdges2($x,$z),self::latEdges1($y,$z)]
+						]
 					)
 				);
 			}
 		}
 
 		private static function latEdges1($y,$z){
-			$n = Gis::numTiles($z);
+			$n = self::numTiles($z);
 			$unit = 1 / $n;
 			$relyA = $y * $unit;
-			$lat1 = Gis::mercatorToLat(M_PI * (1 - 2 * $relyA));
+			$lat1 = self::mercatorToLat(M_PI * (1 - 2 * $relyA));
 			return $lat1;
 		}
 
 		private static function latEdges2($y,$z){
-			$n = Gis::numTiles($z);
+			$n = self::numTiles($z);
 			$unit = 1 / $n;
 			$relyA = $y * $unit;
 			$relyB = $relyA + $unit;
-			$lat2 = Gis::mercatorToLat(M_PI * (1 - 2 * $relyB));
+			$lat2 = self::mercatorToLat(M_PI * (1 - 2 * $relyB));
 			return $lat2;
 		}
 
 		private static function lonEdges1($x,$z){
-			$n = Gis::numTiles($z);
+			$n = self::numTiles($z);
 			$unit = 360 / $n;
 			$lon1 = -180 + $x * $unit;
 			return $lon1;
 		}
 
 		private static function lonEdges2($x,$z){
-			$n = Gis::numTiles($z);
+			$n = self::numTiles($z);
 			$unit = 360 / $n;
 			$lon1 = -180 + $x * $unit;
 			$lon2 = $lon1 + $unit;
@@ -167,13 +170,13 @@
 		}
 
 		private static function lon2mercator($l){
-			return ($l * M_PI * EARTH_EQUATORIAL_RADIUS / 180);
+			return ($l * M_PI * self::EARTH_EQUATORIAL_RADIUS / 180);
 		}
 
 		private static function lat2mercator($l){
 			$r = deg2rad($l);
 			$lat = log((1+sin($r)) / (1-sin($r)));
-			return ($lat * EARTH_EQUATORIAL_RADIUS / 2);
+			return ($lat * self::EARTH_EQUATORIAL_RADIUS / 2);
 		}
 	}
 
