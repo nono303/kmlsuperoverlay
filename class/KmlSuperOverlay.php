@@ -44,10 +44,8 @@
 			<PolyStyle><color>00ffffff</color></PolyStyle>	is OK
 		*/
 		private static $kmlformat = [
-			"header" =>
-				"<?xml version='1.0' encoding='utf-8'?>
-				<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom' xmlns:gx='http://www.google.com/kml/ext/2.2' xmlns:xal='urn:oasis:names:tc:ciq:xsdschema:xAL:2.0'>
-				<Document>
+			"header" => Gis::KMLHEAD.
+				"<Document>
 				<Style id='linered'><LineStyle><width>2</width><color>ff0000ff</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
 				<Style id='linegreen'><LineStyle><width>2</width><color>ff00ff00</color></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style>
 				<Style id='folderCheckOffOnly'><ListStyle><listItemType>checkOffOnly</listItemType><bgColor>bbfcf7de</bgColor>
@@ -279,15 +277,16 @@
 			if(is_array($this->src["region_display"])){
 				$bbox = $this->src["region_display"];
 				if(self::$displayRegion){
-					$placemarkItems = [
-						self::createElement("styleUrl","#linegreen"),
-						self::createElement("Polygon",[
-							self::createElement("tessellate",1),
-							self::createElement("outerBoundaryIs",
-								self::createElement("LinearRing",
-									self::createElement("coordinates",Gis::bboxToLinearRing($bbox))))
-						])
-					];
+					$placemarkItems =
+						[
+							self::createElement("styleUrl","#linegreen"),
+							self::createElement("LineString",
+								[
+									self::createElement("tessellate",1),
+									self::createElement("coordinates",Gis::bboxToLinearRing($bbox))
+								]
+							)
+						];
 					$pmlsbbox =self::createElement("Placemark",$placemarkItems,"region");
 				}
 			} else {
