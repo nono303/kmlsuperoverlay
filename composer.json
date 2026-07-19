@@ -3,6 +3,6 @@
     "minimum-stability": "dev",
     "discard-changes": "stash",
     "require": {
-        "brick/geo": "dev-master"
+        "brick/geo": "dev-main"
     }
 }
